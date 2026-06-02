@@ -1,0 +1,15 @@
+{
+  "appId": "com.inbal.levain",
+  "appName": "Levain",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "ios": {
+    "contentInset": "automatic",
+    "preferredContentMode": "mobile"
+  },
+  "android": {
+    "allowMixedContent": false
+  }
+}
