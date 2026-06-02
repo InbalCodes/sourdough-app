@@ -23,18 +23,35 @@
 
   var T = {
     he: {
-      // Login
+      // Auth
       loginSubtitle: "העוזר האישי שלך לאפייה שקטה",
+      authLoginTitle: "התחברות",
+      authSignupTitle: "הרשמה",
       emailLabel: "אימייל",
       emailPlaceholder: "you@example.com",
+      passwordLabel: "סיסמה",
+      passwordPlaceholder: "6 תווים לפחות",
       nameLabel: "שם אופה",
       namePlaceholder: "השם שלך",
-      loginBtn: "התחבר",
-      loginBtnLoading: "מתחבר...",
-      loginFail: "ההתחברות נכשלה",
-      tryAgain: "נסו שנית.",
+      authLoginBtn: "התחבר",
+      authSignupBtn: "הרשם",
+      authLoginLoading: "מתחבר...",
+      authSignupLoading: "נרשם...",
+      authToggleToSignup: "אין לך חשבון?",
+      authToggleToSignupBtn: "הרשם כאן",
+      authToggleToLogin: "כבר יש לך חשבון?",
+      authToggleToLoginBtn: "התחבר כאן",
 
-      // Lang toggle label (shows what you switch TO)
+      // Auth errors
+      errEmailPasswordRequired: "נא למלא אימייל וסיסמה",
+      errPasswordTooShort: "הסיסמה חייבת להכיל לפחות 6 תווים",
+      errNameRequired: "נא למלא שם",
+      errEmailExists: "האימייל הזה כבר רשום. נסו להתחבר.",
+      errUserNotFound: "לא נמצא משתמש עם אימייל זה",
+      errWrongPassword: "סיסמה שגויה",
+      errGeneric: "משהו השתבש. נסו שנית.",
+
+      // Lang toggle
       langToggle: "EN",
 
       // Tabs
@@ -138,14 +155,30 @@
 
     en: {
       loginSubtitle: "Your personal quiet baking assistant",
+      authLoginTitle: "Log in",
+      authSignupTitle: "Sign up",
       emailLabel: "Email",
       emailPlaceholder: "you@example.com",
+      passwordLabel: "Password",
+      passwordPlaceholder: "At least 6 characters",
       nameLabel: "Baker name",
       namePlaceholder: "Your name",
-      loginBtn: "Log in",
-      loginBtnLoading: "Logging in...",
-      loginFail: "Login failed",
-      tryAgain: "Please try again.",
+      authLoginBtn: "Log in",
+      authSignupBtn: "Sign up",
+      authLoginLoading: "Logging in...",
+      authSignupLoading: "Signing up...",
+      authToggleToSignup: "Don't have an account?",
+      authToggleToSignupBtn: "Sign up here",
+      authToggleToLogin: "Already have an account?",
+      authToggleToLoginBtn: "Log in here",
+
+      errEmailPasswordRequired: "Please enter email and password",
+      errPasswordTooShort: "Password must be at least 6 characters",
+      errNameRequired: "Please enter your name",
+      errEmailExists: "This email is already registered. Try logging in.",
+      errUserNotFound: "No account found with this email",
+      errWrongPassword: "Incorrect password",
+      errGeneric: "Something went wrong. Please try again.",
 
       langToggle: "עב",
 
@@ -290,6 +323,9 @@
 
     applyTranslations();
 
+    // Re-render auth form (updates title, buttons, toggle text)
+    if (typeof updateAuthUI === "function") updateAuthUI();
+
     // Re-render dynamic sections
     loadRefresh();
     if (isLoggedIn()) {
@@ -385,29 +421,90 @@
   }
 
   // =========================================
-  // Authentication
+  // Authentication (Sign Up / Log In)
   // =========================================
 
-  var PROXY_AVAILABLE = null;
+  var authMode = "login"; // "login" or "signup"
 
-  function apiLogin(email, name) {
+  // Map server error codes to translation keys
+  var ERROR_MAP = {
+    EMAIL_PASSWORD_REQUIRED: "errEmailPasswordRequired",
+    PASSWORD_TOO_SHORT: "errPasswordTooShort",
+    NAME_REQUIRED: "errNameRequired",
+    EMAIL_EXISTS: "errEmailExists",
+    USER_NOT_FOUND: "errUserNotFound",
+    WRONG_PASSWORD: "errWrongPassword",
+    SIGNUP_FAILED: "errGeneric",
+    INTERNAL_ERROR: "errGeneric",
+    INVALID_ACTION: "errGeneric",
+  };
+
+  function showAuthError(msg) {
+    var el = $("auth-error");
+    el.textContent = msg;
+    el.classList.remove("hidden");
+  }
+
+  function hideAuthError() {
+    $("auth-error").classList.add("hidden");
+  }
+
+  /** Update the login form UI to reflect current authMode */
+  function updateAuthUI() {
+    var isSignup = authMode === "signup";
+    var nameField = $("name-field");
+    var nameInput = $("login-name");
+    var submitBtn = $("auth-submit-btn");
+    var title = $("auth-title");
+
+    if (isSignup) {
+      nameField.classList.remove("hidden");
+      nameInput.required = true;
+      title.setAttribute("data-i18n", "authSignupTitle");
+      title.textContent = t("authSignupTitle");
+      submitBtn.setAttribute("data-i18n", "authSignupBtn");
+      submitBtn.textContent = t("authSignupBtn");
+      $("auth-toggle-text").setAttribute("data-i18n", "authToggleToLogin");
+      $("auth-toggle-text").textContent = t("authToggleToLogin");
+      $("auth-toggle-btn").setAttribute("data-i18n", "authToggleToLoginBtn");
+      $("auth-toggle-btn").textContent = t("authToggleToLoginBtn");
+    } else {
+      nameField.classList.add("hidden");
+      nameInput.required = false;
+      title.setAttribute("data-i18n", "authLoginTitle");
+      title.textContent = t("authLoginTitle");
+      submitBtn.setAttribute("data-i18n", "authLoginBtn");
+      submitBtn.textContent = t("authLoginBtn");
+      $("auth-toggle-text").setAttribute("data-i18n", "authToggleToSignup");
+      $("auth-toggle-text").textContent = t("authToggleToSignup");
+      $("auth-toggle-btn").setAttribute("data-i18n", "authToggleToSignupBtn");
+      $("auth-toggle-btn").textContent = t("authToggleToSignupBtn");
+    }
+    hideAuthError();
+  }
+
+  $("auth-toggle-btn").addEventListener("click", function () {
+    authMode = authMode === "login" ? "signup" : "login";
+    updateAuthUI();
+  });
+
+  function apiAuth(action, payload) {
     return fetch("/api/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: email, name: name })
+      body: JSON.stringify(Object.assign({ action: action }, payload))
     }).then(function (res) {
       var ct = res.headers.get("content-type") || "";
       if (!ct.includes("application/json")) {
-        PROXY_AVAILABLE = false;
         throw { offline: true };
       }
-      if (!res.ok) {
-        return res.json().then(function (err) {
-          throw new Error(err.error || t("loginFail"));
-        });
-      }
-      PROXY_AVAILABLE = true;
-      return res.json();
+      return res.json().then(function (data) {
+        if (!res.ok) {
+          var errKey = ERROR_MAP[data.error] || "errGeneric";
+          throw { serverError: true, message: t(errKey) };
+        }
+        return data;
+      });
     });
   }
 
@@ -425,34 +522,65 @@
   function showLogin() {
     $("login-overlay").classList.remove("hidden");
     $("app-shell").classList.add("hidden");
+    authMode = "login";
+    updateAuthUI();
+  }
+
+  function completeLogin(email, name) {
+    localStorage.setItem(SK.userEmail, email);
+    localStorage.setItem(SK.userName, name);
+    // Clear form
+    $("login-email").value = "";
+    $("login-password").value = "";
+    $("login-name").value = "";
+    hideAuthError();
+    showApp();
+    initApp();
   }
 
   $("login-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    var email = $("login-email").value.trim();
-    var name = $("login-name").value.trim();
-    if (!email || !name) return;
+    hideAuthError();
 
-    var btn = this.querySelector("button[type=submit]");
-    btn.textContent = t("loginBtnLoading");
+    var email = $("login-email").value.trim();
+    var password = $("login-password").value;
+    var name = $("login-name").value.trim();
+    var isSignup = authMode === "signup";
+
+    // Client-side validation
+    if (!email || !password) {
+      showAuthError(t("errEmailPasswordRequired"));
+      return;
+    }
+    if (password.length < 6) {
+      showAuthError(t("errPasswordTooShort"));
+      return;
+    }
+    if (isSignup && !name) {
+      showAuthError(t("errNameRequired"));
+      return;
+    }
+
+    var btn = $("auth-submit-btn");
+    btn.textContent = isSignup ? t("authSignupLoading") : t("authLoginLoading");
     btn.disabled = true;
 
-    apiLogin(email, name).then(function () {
-      localStorage.setItem(SK.userEmail, email);
-      localStorage.setItem(SK.userName, name);
-      showApp();
-      initApp();
+    var payload = { email: email, password: password };
+    if (isSignup) payload.name = name;
+
+    apiAuth(isSignup ? "signup" : "login", payload).then(function (data) {
+      completeLogin(data.email || email, data.name || name);
     }).catch(function (err) {
       if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-        localStorage.setItem(SK.userEmail, email);
-        localStorage.setItem(SK.userName, name);
-        showApp();
-        initApp();
+        // Offline fallback for local dev
+        completeLogin(email, name || email.split("@")[0]);
+      } else if (err.serverError) {
+        showAuthError(err.message);
       } else {
-        alert(t("loginFail") + ": " + (err.message || "") + "\n" + t("tryAgain"));
+        showAuthError(t("errGeneric"));
       }
     }).finally(function () {
-      btn.textContent = t("loginBtn");
+      btn.textContent = isSignup ? t("authSignupBtn") : t("authLoginBtn");
       btn.disabled = false;
     });
   });
@@ -1156,6 +1284,7 @@
     htmlEl.lang = currentLang;
     htmlEl.dir = currentLang === "he" ? "rtl" : "ltr";
     applyTranslations();
+    updateAuthUI();
   })();
 
   // Boot: check auth

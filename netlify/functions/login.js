@@ -1,9 +1,62 @@
-// Netlify serverless function — keeps Airtable token private.
-// The token is read from an environment variable set in the Netlify dashboard,
-// never exposed to the browser.
+// Netlify serverless function — handles Sign Up and Log In.
+// Passwords are hashed with scrypt before storing in Airtable.
+// The Airtable token lives only here, never sent to the browser.
+
+var crypto = require("crypto");
+
+// --- Password hashing helpers (scrypt, Node.js built-in) ---
+
+function hashPassword(plain) {
+  return new Promise(function (resolve, reject) {
+    var salt = crypto.randomBytes(16).toString("hex");
+    crypto.scrypt(plain, salt, 64, function (err, derived) {
+      if (err) return reject(err);
+      resolve(salt + ":" + derived.toString("hex"));
+    });
+  });
+}
+
+function verifyPassword(plain, stored) {
+  return new Promise(function (resolve, reject) {
+    var parts = stored.split(":");
+    if (parts.length !== 2) return resolve(false);
+    var salt = parts[0];
+    var hash = parts[1];
+    crypto.scrypt(plain, salt, 64, function (err, derived) {
+      if (err) return reject(err);
+      resolve(derived.toString("hex") === hash);
+    });
+  });
+}
+
+// --- Airtable helpers ---
+
+function airtableUrl(base, table, recordId) {
+  var url = "https://api.airtable.com/v0/" + base + "/" + encodeURIComponent(table);
+  if (recordId) url += "/" + recordId;
+  return url;
+}
+
+function airtableHeaders(token) {
+  return {
+    Authorization: "Bearer " + token,
+    "Content-Type": "application/json"
+  };
+}
+
+async function findUserByEmail(base, token, table, email) {
+  var url = airtableUrl(base, table) +
+    "?filterByFormula=" + encodeURIComponent('{Email}="' + email.replace(/"/g, '\\"') + '"') +
+    "&maxRecords=1";
+  var res = await fetch(url, { headers: { Authorization: "Bearer " + token } });
+  if (!res.ok) throw new Error("Airtable lookup failed");
+  var data = await res.json();
+  return (data.records && data.records.length > 0) ? data.records[0] : null;
+}
+
+// --- Main handler ---
 
 exports.handler = async function (event) {
-  // Only allow POST
   if (event.httpMethod !== "POST") {
     return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
   }
@@ -13,110 +66,110 @@ exports.handler = async function (event) {
   var TABLE_NAME = "Users";
 
   if (!AIRTABLE_TOKEN || !AIRTABLE_BASE) {
-    return { statusCode: 500, body: JSON.stringify({ error: "Server misconfigured — missing environment variables" }) };
+    return { statusCode: 500, body: JSON.stringify({ error: "Server misconfigured" }) };
   }
 
   var body;
-  try {
-    body = JSON.parse(event.body);
-  } catch (e) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) };
-  }
+  try { body = JSON.parse(event.body); }
+  catch (e) { return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) }; }
 
-  var email = (body.email || "").trim();
+  var action = body.action; // "signup" or "login"
+  var email = (body.email || "").trim().toLowerCase();
+  var password = body.password || "";
   var name = (body.name || "").trim();
 
-  if (!email || !name) {
-    return { statusCode: 400, body: JSON.stringify({ error: "Email and name are required" }) };
+  if (!email || !password) {
+    return { statusCode: 400, body: JSON.stringify({ error: "EMAIL_PASSWORD_REQUIRED" }) };
+  }
+
+  if (password.length < 6) {
+    return { statusCode: 400, body: JSON.stringify({ error: "PASSWORD_TOO_SHORT" }) };
   }
 
   try {
-    // First, check if this email already exists in the table
-    var searchUrl =
-      "https://api.airtable.com/v0/" + AIRTABLE_BASE + "/" + encodeURIComponent(TABLE_NAME) +
-      "?filterByFormula=" + encodeURIComponent('{Email}="' + email.replace(/"/g, '\\"') + '"') +
-      "&maxRecords=1";
+    var existing = await findUserByEmail(AIRTABLE_BASE, AIRTABLE_TOKEN, TABLE_NAME, email);
 
-    var searchRes = await fetch(searchUrl, {
-      headers: { Authorization: "Bearer " + AIRTABLE_TOKEN }
-    });
+    // ========================
+    // SIGN UP
+    // ========================
+    if (action === "signup") {
+      if (!name) {
+        return { statusCode: 400, body: JSON.stringify({ error: "NAME_REQUIRED" }) };
+      }
 
-    if (!searchRes.ok) {
-      var errText = await searchRes.text();
-      console.error("Airtable search error:", errText);
-      return { statusCode: 502, body: JSON.stringify({ error: "Airtable lookup failed" }) };
+      if (existing) {
+        return { statusCode: 409, body: JSON.stringify({ error: "EMAIL_EXISTS" }) };
+      }
+
+      var hashed = await hashPassword(password);
+
+      var createRes = await fetch(airtableUrl(AIRTABLE_BASE, TABLE_NAME), {
+        method: "POST",
+        headers: airtableHeaders(AIRTABLE_TOKEN),
+        body: JSON.stringify({
+          fields: { Name: name, Email: email, Password: hashed }
+        })
+      });
+
+      if (!createRes.ok) {
+        console.error("Airtable create error:", await createRes.text());
+        return { statusCode: 502, body: JSON.stringify({ error: "SIGNUP_FAILED" }) };
+      }
+
+      var created = await createRes.json();
+      return {
+        statusCode: 200,
+        body: JSON.stringify({
+          success: true,
+          userId: created.id,
+          email: email,
+          name: name
+        })
+      };
     }
 
-    var searchData = await searchRes.json();
+    // ========================
+    // LOG IN
+    // ========================
+    if (action === "login") {
+      if (!existing) {
+        return { statusCode: 401, body: JSON.stringify({ error: "USER_NOT_FOUND" }) };
+      }
 
-    // If user exists, update name (in case it changed) and return
-    if (searchData.records && searchData.records.length > 0) {
-      var existingRecord = searchData.records[0];
-      var updateRes = await fetch(
-        "https://api.airtable.com/v0/" + AIRTABLE_BASE + "/" + encodeURIComponent(TABLE_NAME) + "/" + existingRecord.id,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: "Bearer " + AIRTABLE_TOKEN,
-            "Content-Type": "application/json"
-          },
+      var storedHash = existing.fields.Password;
+      if (!storedHash) {
+        // Legacy user without password — let them in and prompt to set one later
+        return {
+          statusCode: 200,
           body: JSON.stringify({
-            fields: { Name: name }
+            success: true,
+            userId: existing.id,
+            email: existing.fields.Email,
+            name: existing.fields.Name || ""
           })
-        }
-      );
+        };
+      }
 
-      if (!updateRes.ok) {
-        console.error("Airtable update error:", await updateRes.text());
+      var valid = await verifyPassword(password, storedHash);
+      if (!valid) {
+        return { statusCode: 401, body: JSON.stringify({ error: "WRONG_PASSWORD" }) };
       }
 
       return {
         statusCode: 200,
         body: JSON.stringify({
           success: true,
-          userId: existingRecord.id,
-          email: existingRecord.fields.Email,
-          name: name,
-          returning: true
+          userId: existing.id,
+          email: existing.fields.Email,
+          name: existing.fields.Name || ""
         })
       };
     }
 
-    // New user — create record
-    var createRes = await fetch(
-      "https://api.airtable.com/v0/" + AIRTABLE_BASE + "/" + encodeURIComponent(TABLE_NAME),
-      {
-        method: "POST",
-        headers: {
-          Authorization: "Bearer " + AIRTABLE_TOKEN,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          fields: { Name: name, Email: email }
-        })
-      }
-    );
+    return { statusCode: 400, body: JSON.stringify({ error: "INVALID_ACTION" }) };
 
-    if (!createRes.ok) {
-      var createErr = await createRes.text();
-      console.error("Airtable create error:", createErr);
-      return { statusCode: 502, body: JSON.stringify({ error: "Failed to save user" }) };
-    }
-
-    var created = await createRes.json();
-
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        success: true,
-        userId: created.id,
-        email: email,
-        name: name,
-        returning: false
-      })
-    };
   } catch (err) {
     console.error("Proxy error:", err);
-    return { statusCode: 500, body: JSON.stringify({ error: "Internal server error" }) };
+    return { statusCode: 500, body: JSON.stringify({ error: "INTERNAL_ERROR" }) };
   }
 };
