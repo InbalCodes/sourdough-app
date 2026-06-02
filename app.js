@@ -15,6 +15,7 @@
     calcLoaves: "levain_calc_loaves",
     calcBreadWeight: "levain_calc_bread_weight",
     bakeState: "levain_bake_state",
+    recipes: "levain_recipes",
   };
 
   // =========================================
@@ -77,6 +78,10 @@
       targetWeightLabel: "משקל יעד כולל (גרם)",
       targetHint: "חישוב: כמות לחמים × משקל לכל לחם + 100 לשארית",
       ratioLabel: "יחס האכלה מבוקש",
+      ratioCustom: "מותאם אישית",
+      customStarter: "מחמצת",
+      customFlour: "קמח",
+      customWater: "מים",
       tareLabel: "משקל קופסה ריקה - טרה",
       optional: "אופציונלי",
       tarePlaceholder: "גרם",
@@ -151,6 +156,33 @@
 
       resetBakeBtn: "איפוס וסיום אפייה",
       resetBakeConfirm: "לאפס את כל מעקב האפייה ולהתחיל מחדש?",
+
+      // Recipe Book
+      tabRecipes: "ספר המתכונים",
+      bpCalcTitle: "מחשבון אחוזי אופה",
+      bpCalcSubtitle: "חישוב משקלים לפי אחוזי אופה",
+      bpRecipeName: "שם המתכון",
+      bpRecipeNamePh: "למשל: לחם כוסמין ביתי",
+      bpFlourLabel: "סך הקמח הכולל (גרם)",
+      bpHydrationLabel: "אחוז הידרציה / מים (%)",
+      bpSaltLabel: "אחוז מלח (%)",
+      bpStarterLabel: "אחוז מחמצת (%)",
+      bpResultTitle: "משקלים מחושבים",
+      bpFlourRow: "קמח",
+      bpWaterRow: "מים",
+      bpSaltRow: "מלח",
+      bpStarterRow: "מחמצת",
+      bpTotalRow: "משקל בצק כולל",
+      bpGrams: "גרם",
+      bpSaveBtn: "שמור לספר המתכונים",
+      bpSaved: "נשמר!",
+      bpNameRequired: "נא להזין שם למתכון",
+      recipesTitle: "המתכונים השמורים שלי",
+      noRecipes: "טרם נשמרו מתכונים",
+      recipeSelectBtn: "בחר לאפייה",
+      recipeLoadBtn: "טען למחשבון",
+      recipeDeleteConfirm: "למחוק את המתכון?",
+      recipeSelected: "המתכון נטען! עברו ללשונית מעקב אפייה.",
     },
 
     en: {
@@ -202,6 +234,10 @@
       targetWeightLabel: "Total target weight (grams)",
       targetHint: "Formula: loaves × weight per loaf + 100 reserve",
       ratioLabel: "Desired feed ratio",
+      ratioCustom: "Custom",
+      customStarter: "Starter",
+      customFlour: "Flour",
+      customWater: "Water",
       tareLabel: "Empty container weight (tare)",
       optional: "optional",
       tarePlaceholder: "grams",
@@ -272,6 +308,32 @@
 
       resetBakeBtn: "Reset & finish bake",
       resetBakeConfirm: "Reset the entire bake tracker and start over?",
+
+      tabRecipes: "My Recipes",
+      bpCalcTitle: "Baker's percentage calculator",
+      bpCalcSubtitle: "Calculate weights from baker's percentages",
+      bpRecipeName: "Recipe name",
+      bpRecipeNamePh: "e.g., Country Spelt Loaf",
+      bpFlourLabel: "Total flour (grams)",
+      bpHydrationLabel: "Hydration / water (%)",
+      bpSaltLabel: "Salt (%)",
+      bpStarterLabel: "Starter (%)",
+      bpResultTitle: "Calculated weights",
+      bpFlourRow: "Flour",
+      bpWaterRow: "Water",
+      bpSaltRow: "Salt",
+      bpStarterRow: "Starter",
+      bpTotalRow: "Total dough weight",
+      bpGrams: "g",
+      bpSaveBtn: "Save to recipe book",
+      bpSaved: "Saved!",
+      bpNameRequired: "Please enter a recipe name",
+      recipesTitle: "My saved recipes",
+      noRecipes: "No recipes saved yet",
+      recipeSelectBtn: "Select for baking",
+      recipeLoadBtn: "Load into calculator",
+      recipeDeleteConfirm: "Delete this recipe?",
+      recipeSelected: "Recipe loaded! Switch to the Bake tracker tab.",
     }
   };
 
@@ -338,6 +400,8 @@
 
     // Recalculate
     updateCalc();
+    updateBPCalc();
+    renderRecipes();
   }
 
   function toggleLanguage() {
@@ -679,6 +743,7 @@
     if (savedBreadWeight) breadWeightInput.value = savedBreadWeight;
     if (savedRatio) ratioSelect.value = savedRatio;
     if (savedTare) tareInput.value = savedTare;
+    toggleCustomRatio();
   }
 
   function saveCalcPref(key, value) {
@@ -715,19 +780,47 @@
     saveCalcPref(SK.calcBreadWeight, breadWeightInput.value);
     syncTarget();
   });
+  var customStarterInput = $("custom-starter");
+  var customFlourInput = $("custom-flour");
+  var customWaterInput = $("custom-water");
+  var customRatioRow = $("custom-ratio-row");
+
+  function toggleCustomRatio() {
+    var isCustom = ratioSelect.value === "custom";
+    if (isCustom) {
+      customRatioRow.classList.remove("hidden");
+    } else {
+      customRatioRow.classList.add("hidden");
+    }
+  }
+
   targetInput.addEventListener("input", updateCalc);
   ratioSelect.addEventListener("change", function () {
     saveCalcPref(SK.calcRatio, ratioSelect.value);
+    toggleCustomRatio();
     updateCalc();
   });
   tareInput.addEventListener("input", function () {
     saveCalcPref(SK.calcTare, tareInput.value);
     updateCalc();
   });
+  customStarterInput.addEventListener("input", updateCalc);
+  customFlourInput.addEventListener("input", updateCalc);
+  customWaterInput.addEventListener("input", updateCalc);
 
   function parseRatio(str) {
     var parts = str.split(":").map(Number);
     return { starter: parts[0], flour: parts[1], water: parts[2] };
+  }
+
+  function getActiveRatio() {
+    if (ratioSelect.value === "custom") {
+      var s = parseInt(customStarterInput.value, 10) || 1;
+      var f = parseInt(customFlourInput.value, 10) || 1;
+      var w = parseInt(customWaterInput.value, 10) || 1;
+      return { starter: s, flour: f, water: w };
+    }
+    return parseRatio(ratioSelect.value);
   }
 
   function updateCalc() {
@@ -736,7 +829,7 @@
       $("calc-result").classList.add("hidden");
       return;
     }
-    var r = parseRatio(ratioSelect.value);
+    var r = getActiveRatio();
     var sum = r.starter + r.flour + r.water;
     var divider = tw / sum;
 
@@ -1267,6 +1360,187 @@
   }
 
   // =========================================
+  // Baker's Percentage Calculator & Recipe Book
+  // =========================================
+
+  var bpFlour = $("bp-flour");
+  var bpHydration = $("bp-hydration");
+  var bpSalt = $("bp-salt");
+  var bpStarter = $("bp-starter");
+  var bpName = $("bp-name");
+
+  function updateBPCalc() {
+    var flour = parseFloat(bpFlour.value) || 0;
+    var hydPct = parseFloat(bpHydration.value) || 0;
+    var saltPct = parseFloat(bpSalt.value) || 0;
+    var starterPct = parseFloat(bpStarter.value) || 0;
+
+    var water = roundTo(flour * hydPct / 100);
+    var salt = roundTo(flour * saltPct / 100);
+    var starter = roundTo(flour * starterPct / 100);
+    var total = roundTo(flour + water + salt + starter);
+
+    $("bp-val-flour").innerHTML = flour + ' <span data-i18n="bpGrams">' + t("bpGrams") + "</span>";
+    $("bp-val-water").innerHTML = water + ' <span data-i18n="bpGrams">' + t("bpGrams") + "</span>";
+    $("bp-val-salt").innerHTML = salt + ' <span data-i18n="bpGrams">' + t("bpGrams") + "</span>";
+    $("bp-val-starter").innerHTML = starter + ' <span data-i18n="bpGrams">' + t("bpGrams") + "</span>";
+    $("bp-val-total").innerHTML = total + ' <span data-i18n="bpGrams">' + t("bpGrams") + "</span>";
+
+    $("bp-pct-water").textContent = "(" + hydPct + "%)";
+    $("bp-pct-salt").textContent = "(" + saltPct + "%)";
+    $("bp-pct-starter").textContent = "(" + starterPct + "%)";
+  }
+
+  [bpFlour, bpHydration, bpSalt, bpStarter].forEach(function (inp) {
+    inp.addEventListener("input", updateBPCalc);
+  });
+
+  // --- Recipe persistence ---
+
+  function getRecipes() {
+    try { return JSON.parse(localStorage.getItem(SK.recipes)) || []; }
+    catch (e) { return []; }
+  }
+
+  function saveRecipes(arr) {
+    localStorage.setItem(SK.recipes, JSON.stringify(arr));
+  }
+
+  function renderRecipes() {
+    var recipes = getRecipes();
+    var list = $("recipe-list");
+    var noMsg = $("no-recipes-msg");
+
+    if (recipes.length === 0) {
+      noMsg.classList.remove("hidden");
+      list.innerHTML = "";
+      return;
+    }
+    noMsg.classList.add("hidden");
+
+    list.innerHTML = recipes.map(function (r, i) {
+      return '<div class="recipe-card" data-idx="' + i + '">' +
+        '<div class="recipe-card-header">' +
+          '<span class="recipe-card-name">' + escHtml(r.name) + '</span>' +
+          '<button class="recipe-delete-btn" data-idx="' + i + '" aria-label="delete">' +
+            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
+              '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
+            '</svg>' +
+          '</button>' +
+        '</div>' +
+        '<div class="recipe-percentages">' +
+          '<span class="recipe-pct-tag"><strong>' + r.flour + 'g</strong> ' + t("bpFlourRow") + '</span>' +
+          '<span class="recipe-pct-tag"><strong>' + r.hydration + '%</strong> ' + t("bpWaterRow") + '</span>' +
+          '<span class="recipe-pct-tag"><strong>' + r.salt + '%</strong> ' + t("bpSaltRow") + '</span>' +
+          '<span class="recipe-pct-tag"><strong>' + r.starter + '%</strong> ' + t("bpStarterRow") + '</span>' +
+        '</div>' +
+        '<div class="recipe-actions">' +
+          '<button class="recipe-select-btn" data-idx="' + i + '">' + t("recipeSelectBtn") + '</button>' +
+          '<button class="recipe-load-btn" data-idx="' + i + '">' + t("recipeLoadBtn") + '</button>' +
+        '</div>' +
+      '</div>';
+    }).join("");
+
+    // Wire delete buttons
+    list.querySelectorAll(".recipe-delete-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!confirm(t("recipeDeleteConfirm"))) return;
+        var idx = Number(btn.dataset.idx);
+        var arr = getRecipes();
+        arr.splice(idx, 1);
+        saveRecipes(arr);
+        renderRecipes();
+      });
+    });
+
+    // Wire "load into calculator" buttons
+    list.querySelectorAll(".recipe-load-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var r = getRecipes()[Number(btn.dataset.idx)];
+        if (!r) return;
+        bpName.value = r.name;
+        bpFlour.value = r.flour;
+        bpHydration.value = r.hydration;
+        bpSalt.value = r.salt;
+        bpStarter.value = r.starter;
+        updateBPCalc();
+        // Scroll to top of recipes panel
+        $("panel-recipes").scrollTo({ top: 0, behavior: "smooth" });
+      });
+    });
+
+    // Wire "select for baking" buttons
+    list.querySelectorAll(".recipe-select-btn").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var r = getRecipes()[Number(btn.dataset.idx)];
+        if (!r) return;
+        // Calculate weights and store in bake-ready state
+        var flour = r.flour;
+        var water = roundTo(flour * r.hydration / 100);
+        var salt = roundTo(flour * r.salt / 100);
+        var starter = roundTo(flour * r.starter / 100);
+        localStorage.setItem("levain_selected_recipe", JSON.stringify({
+          name: r.name,
+          flour: flour,
+          water: water,
+          salt: salt,
+          starter: starter,
+          total: roundTo(flour + water + salt + starter)
+        }));
+        // Switch to bake tab
+        document.querySelectorAll(".tab").forEach(function (tb) {
+          tb.classList.remove("active");
+          tb.setAttribute("aria-selected", "false");
+        });
+        document.querySelectorAll(".tab-panel").forEach(function (p) {
+          p.classList.remove("active");
+        });
+        var bakeTab = document.querySelector('[data-tab="bake"]');
+        bakeTab.classList.add("active");
+        bakeTab.setAttribute("aria-selected", "true");
+        $("panel-bake").classList.add("active");
+        alert(t("recipeSelected"));
+      });
+    });
+  }
+
+  function escHtml(str) {
+    var d = document.createElement("div");
+    d.textContent = str;
+    return d.innerHTML;
+  }
+
+  // Save recipe button
+  $("btn-save-recipe").addEventListener("click", function () {
+    var name = bpName.value.trim();
+    if (!name) {
+      alert(t("bpNameRequired"));
+      return;
+    }
+    var recipe = {
+      name: name,
+      flour: parseFloat(bpFlour.value) || 500,
+      hydration: parseFloat(bpHydration.value) || 70,
+      salt: parseFloat(bpSalt.value) || 2,
+      starter: parseFloat(bpStarter.value) || 20,
+    };
+    var arr = getRecipes();
+    arr.push(recipe);
+    saveRecipes(arr);
+    renderRecipes();
+
+    // Button feedback
+    var btn = $("btn-save-recipe");
+    var origText = btn.textContent;
+    btn.textContent = t("bpSaved");
+    btn.disabled = true;
+    setTimeout(function () {
+      btn.textContent = origText;
+      btn.disabled = false;
+    }, 1500);
+  });
+
+  // =========================================
   // Init
   // =========================================
 
@@ -1276,6 +1550,8 @@
     updateCalc();
     loadRefresh();
     renderBakeUI();
+    updateBPCalc();
+    renderRecipes();
   }
 
   // Apply saved language on boot (before showing anything)

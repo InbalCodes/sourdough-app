@@ -138,16 +138,7 @@ exports.handler = async function (event) {
 
       var storedHash = existing.fields.Password;
       if (!storedHash) {
-        // Legacy user without password — let them in and prompt to set one later
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            success: true,
-            userId: existing.id,
-            email: existing.fields.Email,
-            name: existing.fields.Name || ""
-          })
-        };
+        return { statusCode: 401, body: JSON.stringify({ error: "WRONG_PASSWORD" }) };
       }
 
       var valid = await verifyPassword(password, storedHash);

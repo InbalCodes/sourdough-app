@@ -77,6 +77,7 @@
     <nav class="tab-bar" role="tablist">
       <button class="tab active" role="tab" aria-selected="true" data-tab="starter" data-i18n="tabStarter">רענון ותחזוקה</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="bake" data-i18n="tabBake">מעקב אפייה ולו״זים</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="recipes" data-i18n="tabRecipes">ספר המתכונים</button>
     </nav>
 
     <main class="tab-panels">
@@ -131,10 +132,29 @@
                 <option value="1:1:1">1:1:1</option>
                 <option value="1:2:2">1:2:2</option>
                 <option value="1:4:4">1:4:4</option>
-                <option value="1:10:10" selected>1:10:10</option>
+                <option value="1:6:6">1:6:6</option>
                 <option value="1:12:12">1:12:12</option>
-                <option value="1:15:15">1:15:15</option>
+                <option value="custom" data-i18n="ratioCustom">מותאם אישית</option>
               </select>
+            </div>
+
+            <div id="custom-ratio-row" class="custom-ratio-row hidden">
+              <div class="custom-ratio-fields">
+                <div class="custom-ratio-field">
+                  <label for="custom-starter" data-i18n="customStarter">מחמצת</label>
+                  <input id="custom-starter" type="number" inputmode="numeric" min="1" value="1">
+                </div>
+                <span class="custom-ratio-sep">:</span>
+                <div class="custom-ratio-field">
+                  <label for="custom-flour" data-i18n="customFlour">קמח</label>
+                  <input id="custom-flour" type="number" inputmode="numeric" min="1" value="5">
+                </div>
+                <span class="custom-ratio-sep">:</span>
+                <div class="custom-ratio-field">
+                  <label for="custom-water" data-i18n="customWater">מים</label>
+                  <input id="custom-water" type="number" inputmode="numeric" min="1" value="5">
+                </div>
+              </div>
             </div>
 
             <label for="tare-weight"><span data-i18n="tareLabel">משקל קופסה ריקה - טרה</span> <span class="optional-tag" data-i18n="optional">אופציונלי</span></label>
@@ -197,6 +217,74 @@
             </div>
           </div>
           <ol id="bake-steps" class="step-list"></ol>
+        </div>
+
+      </section>
+
+      <!-- ======================== -->
+      <!-- TAB 3: Recipe Book -->
+      <!-- ======================== -->
+      <section id="panel-recipes" class="tab-panel" role="tabpanel">
+
+        <!-- Baker's Percentage Calculator -->
+        <div class="card">
+          <h2 data-i18n="bpCalcTitle">מחשבון אחוזי אופה</h2>
+          <p class="card-subtitle" data-i18n="bpCalcSubtitle">חישוב משקלים לפי אחוזי אופה</p>
+
+          <label for="bp-name" data-i18n="bpRecipeName">שם המתכון</label>
+          <input id="bp-name" type="text" data-i18n-placeholder="bpRecipeNamePh" placeholder="למשל: לחם כוסמין ביתי">
+
+          <label for="bp-flour" data-i18n="bpFlourLabel">סך הקמח הכולל (גרם)</label>
+          <input id="bp-flour" type="number" inputmode="numeric" min="50" value="500">
+
+          <label for="bp-hydration" data-i18n="bpHydrationLabel">אחוז הידרציה / מים (%)</label>
+          <input id="bp-hydration" type="number" inputmode="numeric" min="1" max="200" value="70">
+
+          <label for="bp-salt" data-i18n="bpSaltLabel">אחוז מלח (%)</label>
+          <input id="bp-salt" type="number" inputmode="numeric" min="0" max="50" value="2" step="0.1">
+
+          <label for="bp-starter" data-i18n="bpStarterLabel">אחוז מחמצת (%)</label>
+          <input id="bp-starter" type="number" inputmode="numeric" min="0" max="200" value="20">
+
+          <div id="bp-result" class="bp-result-card">
+            <h3 data-i18n="bpResultTitle">משקלים מחושבים</h3>
+            <div class="bp-result-grid">
+              <div class="bp-row">
+                <span class="bp-label" data-i18n="bpFlourRow">קמח</span>
+                <span class="bp-pct">(100%)</span>
+                <span class="bp-val" id="bp-val-flour">500 <span data-i18n="bpGrams">גרם</span></span>
+              </div>
+              <div class="bp-row">
+                <span class="bp-label" data-i18n="bpWaterRow">מים</span>
+                <span class="bp-pct" id="bp-pct-water">(70%)</span>
+                <span class="bp-val" id="bp-val-water">350 <span data-i18n="bpGrams">גרם</span></span>
+              </div>
+              <div class="bp-row">
+                <span class="bp-label" data-i18n="bpSaltRow">מלח</span>
+                <span class="bp-pct" id="bp-pct-salt">(2%)</span>
+                <span class="bp-val" id="bp-val-salt">10 <span data-i18n="bpGrams">גרם</span></span>
+              </div>
+              <div class="bp-row">
+                <span class="bp-label" data-i18n="bpStarterRow">מחמצת</span>
+                <span class="bp-pct" id="bp-pct-starter">(20%)</span>
+                <span class="bp-val" id="bp-val-starter">100 <span data-i18n="bpGrams">גרם</span></span>
+              </div>
+              <div class="bp-row bp-row-total">
+                <span class="bp-label" data-i18n="bpTotalRow">משקל בצק כולל</span>
+                <span class="bp-pct"></span>
+                <span class="bp-val bp-val-total" id="bp-val-total">960 <span data-i18n="bpGrams">גרם</span></span>
+              </div>
+            </div>
+          </div>
+
+          <button id="btn-save-recipe" class="btn btn-primary btn-large" data-i18n="bpSaveBtn">שמור לספר המתכונים</button>
+        </div>
+
+        <!-- Saved Recipes -->
+        <div class="card" id="saved-recipes-card">
+          <h2 data-i18n="recipesTitle">המתכונים השמורים שלי</h2>
+          <p id="no-recipes-msg" class="meta-text" data-i18n="noRecipes">טרם נשמרו מתכונים</p>
+          <div id="recipe-list" class="recipe-list"></div>
         </div>
 
       </section>

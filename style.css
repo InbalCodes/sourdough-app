@@ -633,7 +633,8 @@ label {
   font-weight: 400;
 }
 
-input[type="number"] {
+input[type="number"],
+.card input[type="text"] {
   width: 100%;
   padding: 13px 16px;
   border: 1px solid var(--border);
@@ -646,7 +647,8 @@ input[type="number"] {
   transition: border-color 0.2s;
 }
 
-input[type="number"]:focus {
+input[type="number"]:focus,
+.card input[type="text"]:focus {
   border-color: var(--accent-dark);
 }
 
@@ -724,6 +726,58 @@ select {
 
 select:focus {
   border-color: var(--accent-dark);
+}
+
+/* =========================================
+   Custom Ratio
+   ========================================= */
+
+.custom-ratio-row {
+  margin-top: 10px;
+  overflow: hidden;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+}
+
+.custom-ratio-row.hidden {
+  max-height: 0;
+  opacity: 0;
+  margin-top: 0;
+}
+
+.custom-ratio-fields {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.custom-ratio-field {
+  flex: 1;
+}
+
+.custom-ratio-field label {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+  text-align: center;
+}
+
+.custom-ratio-field input {
+  width: 100%;
+  text-align: center;
+  padding: 8px 4px;
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.custom-ratio-sep {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  padding-bottom: 10px;
 }
 
 /* =========================================
@@ -1062,6 +1116,191 @@ select:focus {
 }
 
 /* =========================================
+   Baker's Percentage Calculator
+   ========================================= */
+
+.bp-result-card {
+  margin-top: 20px;
+  padding: 20px;
+  background: var(--surface-alt);
+  border: 1px solid var(--border-light);
+  border-radius: var(--radius);
+}
+
+.bp-result-card h3 {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 14px;
+  letter-spacing: -0.01em;
+}
+
+.bp-result-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bp-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bp-label {
+  flex: 1;
+  font-size: 0.9rem;
+  color: var(--text);
+  font-weight: 500;
+}
+
+.bp-pct {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  min-width: 48px;
+  text-align: center;
+}
+
+.bp-val {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent-text);
+  min-width: 90px;
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.bp-row-total {
+  margin-top: 6px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.bp-val-total {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+/* =========================================
+   Recipe Cards
+   ========================================= */
+
+.recipe-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.recipe-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  position: relative;
+}
+
+.recipe-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.recipe-card-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text);
+  letter-spacing: -0.01em;
+}
+
+.recipe-delete-btn {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s, background 0.15s;
+  padding: 0;
+}
+
+.recipe-delete-btn:hover,
+.recipe-delete-btn:active {
+  color: var(--danger);
+  background: var(--danger-bg);
+}
+
+.recipe-percentages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-bottom: 12px;
+}
+
+.recipe-pct-tag {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  background: var(--surface-alt);
+  padding: 3px 10px;
+  border-radius: 20px;
+  border: 1px solid var(--border-light);
+}
+
+.recipe-pct-tag strong {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.recipe-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.recipe-select-btn {
+  flex: 1;
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  font-family: inherit;
+  border: 1px solid var(--accent-dark);
+  background: var(--accent);
+  color: var(--accent-text);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.recipe-select-btn:active {
+  transform: scale(0.97);
+  background: var(--accent-dark);
+  color: #fff;
+}
+
+.recipe-load-btn {
+  padding: 10px 14px;
+  font-size: 0.84rem;
+  font-weight: 500;
+  font-family: inherit;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.recipe-load-btn:active {
+  border-color: var(--accent-dark);
+  color: var(--accent-text);
+}
+
+/* =========================================
    Utility
    ========================================= */
 
@@ -1107,5 +1346,10 @@ select:focus {
 
   .lifestyle-icon {
     background: var(--surface-alt);
+  }
+
+  .recipe-select-btn {
+    background: var(--accent);
+    border-color: var(--accent-dark);
   }
 }
