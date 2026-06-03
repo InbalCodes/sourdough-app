@@ -82,7 +82,6 @@
 
       // Calculator
       calcTitle: "מחשבון האכלה לפני אפייה",
-      calcSubtitle: "נוסחת הסדנה",
       loafCountLabel: "כמות לחמים מתוכננת",
       breadWeightLabel: "משקל מחמצת לכל לחם (גרם)",
       breadWeightPlaceholder: "100",
@@ -273,7 +272,6 @@
       fedBtn: "I fed it!",
 
       calcTitle: "Pre-bake feed calculator",
-      calcSubtitle: "Workshop formula",
       loafCountLabel: "Planned loaf count",
       breadWeightLabel: "Starter per loaf (grams)",
       breadWeightPlaceholder: "100",
