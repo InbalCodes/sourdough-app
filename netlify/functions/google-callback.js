@@ -29,8 +29,14 @@ function nativeDonePage(success) {
       '.card{max-width:320px}.title{font-size:2rem;font-weight:300;letter-spacing:.1em;margin-bottom:16px}' +
       'p{font-size:.95rem;color:#6B7280;line-height:1.6}</style></head>' +
       '<body><div class="card"><div class="title">Levain</div>' +
-      '<p>' + msg + '</p></div>' +
-      '<script>setTimeout(function(){window.close()},1000);</script>' +
+      '<p>' + msg + '</p>' +
+      '<a href="intent://#Intent;scheme=com.inbal.levain;package=com.inbal.levain;end" ' +
+      'style="display:block;margin-top:24px;padding:14px 24px;background:#2C3531;color:#FDFBF7;' +
+      'border-radius:12px;text-decoration:none;font-weight:600;font-size:.95rem">' +
+      'Return to Levain</a></div>' +
+      '<script>setTimeout(function(){' +
+      'window.location.href="intent://#Intent;scheme=com.inbal.levain;package=com.inbal.levain;end";' +
+      '},800);</script>' +
       '</body></html>'
   };
 }
