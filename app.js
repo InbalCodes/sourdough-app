@@ -599,7 +599,7 @@
   }
 
   /**
-   * Parse query params from a URL string (for deep link handling).
+   * Parse query params from a URL string.
    */
   function parseUrlParams(url) {
     var params = {};
@@ -613,31 +613,50 @@
   }
 
   /**
-   * Native: listen for deep link callback from Google OAuth.
-   * The server redirects to com.inbal.levain://callback/?google_auth=1&email=...&name=...
+   * Handle deep link auth data (from appUrlOpen or getLaunchUrl).
    */
-  if (isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
-    window.Capacitor.Plugins.App.addListener("appUrlOpen", function (data) {
-      var url = data.url || "";
-      if (url.indexOf("com.inbal.levain://callback") !== 0) return;
+  function handleDeepLink(url) {
+    if (!url || url.indexOf("com.inbal.levain://") === -1) return false;
+    var params = parseUrlParams(url);
+    if (params.google_auth === "1" && params.email) {
+      completeLogin(params.email, params.name || "");
+      return true;
+    }
+    if (params.google_auth === "error" || params.google_auth === "cancel") {
+      showLogin();
+      showAuthError(t("errGoogleCancelled"));
+      return true;
+    }
+    return false;
+  }
 
-      // Close the in-app browser if it's still open
-      if (window.Capacitor.Plugins.Browser) {
-        window.Capacitor.Plugins.Browser.close();
-      }
+  /**
+   * Native: set up deep link listeners using Capacitor's registerPlugin pattern.
+   * Also check if the app was launched via a deep link.
+   */
+  if (isNative) {
+    // Capacitor 8 registers plugins via Capacitor.registerPlugin
+    var CapApp = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) ||
+                 (window.Capacitor && window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("App"));
+    var CapBrowser = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) ||
+                     (window.Capacitor && window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("Browser"));
 
-      var params = parseUrlParams(url);
+    if (CapApp) {
+      // Listen for deep links when app is already running
+      CapApp.addListener("appUrlOpen", function (data) {
+        if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
+        handleDeepLink(data.url || "");
+      });
 
-      if (params.google_auth === "error") {
-        showLogin();
-        showAuthError(t("errGeneric"));
-        return;
-      }
+      // Check if app was LAUNCHED via a deep link
+      CapApp.getLaunchUrl().then(function (result) {
+        if (result && result.url) {
+          handleDeepLink(result.url);
+        }
+      }).catch(function () {});
+    }
 
-      if (params.google_auth === "1" && params.email) {
-        completeLogin(params.email, params.name || "");
-      }
-    });
+    console.log("[Levain] isNative:", isNative, "CapApp:", !!CapApp, "CapBrowser:", !!CapBrowser);
   }
 
   /** Start Google OAuth */
@@ -652,9 +671,18 @@
       "&prompt=select_account" +
       "&access_type=online";
 
-    if (isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
-      // Open in Custom Chrome Tab — stays in-app, redirects back via deep link
-      window.Capacitor.Plugins.Browser.open({ url: authUrl });
+    if (isNative) {
+      // Try Browser plugin first, then fallback to window.open with _blank
+      var CapBrowser = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) ||
+                       (window.Capacitor && window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("Browser"));
+      if (CapBrowser && CapBrowser.open) {
+        console.log("[Levain] Opening OAuth via Capacitor Browser plugin");
+        CapBrowser.open({ url: authUrl, presentationStyle: "popover" });
+      } else {
+        // Fallback: open in system browser (never navigate WebView away)
+        console.log("[Levain] Opening OAuth via window.open _blank");
+        window.open(authUrl, "_blank");
+      }
     } else {
       // Web: navigate directly
       window.location.href = authUrl;
@@ -671,7 +699,7 @@
 
     startGoogleOAuth();
 
-    // For native, restore button after a delay (user may cancel)
+    // For native, restore button after a delay (user may cancel or return)
     if (isNative) {
       setTimeout(function () {
         label.textContent = t("googleSignInBtn");
