@@ -11,7 +11,7 @@ exports.handler = async function (event) {
 
   if (error || !code) {
     // User cancelled or error occurred — redirect back to login
-    var cancelUrl = state === "native" ? "https://localhost/" : NETLIFY_ORIGIN + "/";
+    var cancelUrl = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
     return { statusCode: 302, headers: { Location: cancelUrl }, body: "" };
   }
 
@@ -39,7 +39,7 @@ exports.handler = async function (event) {
 
     if (!tokenRes.ok) {
       console.error("Token exchange failed:", await tokenRes.text());
-      var errUrl = state === "native" ? "https://localhost/" : NETLIFY_ORIGIN + "/";
+      var errUrl = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
       return { statusCode: 302, headers: { Location: errUrl + "?google_auth=error" }, body: "" };
     }
 
@@ -52,7 +52,7 @@ exports.handler = async function (event) {
 
     if (!userRes.ok) {
       console.error("User info fetch failed:", await userRes.text());
-      var errUrl2 = state === "native" ? "https://localhost/" : NETLIFY_ORIGIN + "/";
+      var errUrl2 = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
       return { statusCode: 302, headers: { Location: errUrl2 + "?google_auth=error" }, body: "" };
     }
 
@@ -95,7 +95,7 @@ exports.handler = async function (event) {
     }
 
     // 4. Redirect back to app with user info
-    var returnBase = state === "native" ? "https://localhost/" : NETLIFY_ORIGIN + "/";
+    var returnBase = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
     var returnUrl = returnBase + "?google_auth=1" +
       "&email=" + encodeURIComponent(email) +
       "&name=" + encodeURIComponent(name);
@@ -104,7 +104,7 @@ exports.handler = async function (event) {
 
   } catch (err) {
     console.error("Google callback error:", err);
-    var errUrl3 = state === "native" ? "https://localhost/" : NETLIFY_ORIGIN + "/";
+    var errUrl3 = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
     return { statusCode: 302, headers: { Location: errUrl3 + "?google_auth=error" }, body: "" };
   }
 };

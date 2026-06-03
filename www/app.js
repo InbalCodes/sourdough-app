@@ -568,7 +568,7 @@
   var OAUTH_REDIRECT_URI = NETLIFY_ORIGIN + "/api/google-callback";
 
   /**
-   * Check on boot if we're returning from the Google OAuth callback.
+   * Check on boot if we're returning from the Google OAuth callback (web only).
    * The server redirects back with ?google_auth=1&email=...&name=...
    */
   function checkOAuthRedirect() {
@@ -598,7 +598,49 @@
     return false;
   }
 
-  /** Start Google OAuth — redirects to Google, which redirects to our server callback */
+  /**
+   * Parse query params from a URL string (for deep link handling).
+   */
+  function parseUrlParams(url) {
+    var params = {};
+    var qIdx = url.indexOf("?");
+    if (qIdx === -1) return params;
+    url.substring(qIdx + 1).split("&").forEach(function (part) {
+      var kv = part.split("=");
+      params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
+    });
+    return params;
+  }
+
+  /**
+   * Native: listen for deep link callback from Google OAuth.
+   * The server redirects to com.inbal.levain://callback/?google_auth=1&email=...&name=...
+   */
+  if (isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+    window.Capacitor.Plugins.App.addListener("appUrlOpen", function (data) {
+      var url = data.url || "";
+      if (url.indexOf("com.inbal.levain://callback") !== 0) return;
+
+      // Close the in-app browser if it's still open
+      if (window.Capacitor.Plugins.Browser) {
+        window.Capacitor.Plugins.Browser.close();
+      }
+
+      var params = parseUrlParams(url);
+
+      if (params.google_auth === "error") {
+        showLogin();
+        showAuthError(t("errGeneric"));
+        return;
+      }
+
+      if (params.google_auth === "1" && params.email) {
+        completeLogin(params.email, params.name || "");
+      }
+    });
+  }
+
+  /** Start Google OAuth */
   function startGoogleOAuth() {
     var state = isNative ? "native" : "web";
     var authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
@@ -609,17 +651,33 @@
       "&state=" + state +
       "&prompt=select_account" +
       "&access_type=online";
-    window.location.href = authUrl;
+
+    if (isNative && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) {
+      // Open in Custom Chrome Tab — stays in-app, redirects back via deep link
+      window.Capacitor.Plugins.Browser.open({ url: authUrl });
+    } else {
+      // Web: navigate directly
+      window.location.href = authUrl;
+    }
   }
 
-  // Google button click — same flow for web and native
+  // Google button click
   $("btn-google-signin").addEventListener("click", function () {
     hideAuthError();
     var btn = $("btn-google-signin");
     var label = btn.querySelector("span");
     label.textContent = t("googleSignInLoading");
     btn.disabled = true;
+
     startGoogleOAuth();
+
+    // For native, restore button after a delay (user may cancel)
+    if (isNative) {
+      setTimeout(function () {
+        label.textContent = t("googleSignInBtn");
+        btn.disabled = false;
+      }, 3000);
+    }
   });
 
   $("btn-logout").addEventListener("click", function () {
