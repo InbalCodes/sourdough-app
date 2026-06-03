@@ -45,8 +45,7 @@ exports.handler = async function (event) {
     // ========================
     if (action === "list") {
       var url = airtableUrl(AIRTABLE_BASE, TABLE_NAME) +
-        "?filterByFormula=" + encodeURIComponent('{UserEmail}="' + userEmail.replace(/"/g, '\\"') + '"') +
-        "&sort%5B0%5D%5Bfield%5D=Created&sort%5B0%5D%5Bdirection%5D=desc";
+        "?filterByFormula=" + encodeURIComponent('{UserEmail}="' + userEmail.replace(/"/g, '\\"') + '"');
 
       var res = await fetch(url, { headers: { Authorization: "Bearer " + AIRTABLE_TOKEN } });
       if (!res.ok) throw new Error("Airtable list failed");
