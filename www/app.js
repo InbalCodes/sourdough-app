@@ -564,7 +564,7 @@
 
   // Detect native Capacitor environment (Android/iOS WebView)
   var isNative = typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
-  var NETLIFY_ORIGIN = "https://sage-sherbet-8604b0.netlify.app";
+  var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
   var OAUTH_REDIRECT_URI = NETLIFY_ORIGIN + "/api/google-callback";
 
   /**

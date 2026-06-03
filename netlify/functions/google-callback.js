@@ -1,7 +1,7 @@
 // Netlify serverless function — Google OAuth2 callback.
 // Exchanges auth code for user info, upserts to Airtable, redirects back to app.
 
-var NETLIFY_ORIGIN = "https://sage-sherbet-8604b0.netlify.app";
+var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
 
 exports.handler = async function (event) {
   var params = event.queryStringParameters || {};
