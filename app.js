@@ -48,9 +48,10 @@
       forgotPasswordBtn: "שכחת סיסמה?",
       authForgotTitle: "איפוס סיסמה",
       authForgotBtn: "שלח הוראות איפוס",
-      authForgotLoading: "שולח...",
+      authForgotLoading: "בודק...",
       authBackToLogin: "חזור להתחברות",
-      forgotSuccess: "הוראות לאיפוס נשלחו למייל",
+      forgotSuccess: "המשתמש נמצא. שליחת מייל איפוס עדיין לא מוגדרת — צרו קשר עם התמיכה.",
+      forgotUserNotFound: "לא נמצא חשבון עם אימייל זה",
 
       // Auth errors
       errEmailPasswordRequired: "נא למלא אימייל וסיסמה",
@@ -177,6 +178,16 @@
       resetBakeBtn: "איפוס וסיום אפייה",
       resetBakeConfirm: "לאפס את כל מעקב האפייה ולהתחיל מחדש?",
 
+      // Chime notifications
+      chimeAutolyse: "🔔 הגיע הזמן לאוטוליזה!",
+      chimeBulk: "🔔 הגיע הזמן ללישה + באלק!",
+      chimeFold: "🔔 הגיע הזמן לקיפול!",
+      chimePreshape: "🔔 מנוחת עיצוב ראשוני הסתיימה!",
+      chimeOven: "🔔 חממו תנור ל-250 מעלות!",
+      chimeCold: "🔔 ההתפחה במקרר הסתיימה!",
+      chimeBakePhase1: "🔔 פאזה 1 הסתיימה! שנו טמפרטורה ופתחו סיר.",
+      chimeBakePhase2: "🔔 האפייה הסתיימה! 🎉",
+
       // Recipe Book
       tabRecipes: "ספר המתכונים",
       bpCalcTitle: "מחשבון אחוזי אופה",
@@ -229,9 +240,10 @@
       forgotPasswordBtn: "Forgot password?",
       authForgotTitle: "Reset password",
       authForgotBtn: "Send reset instructions",
-      authForgotLoading: "Sending...",
+      authForgotLoading: "Checking...",
       authBackToLogin: "Back to log in",
-      forgotSuccess: "Reset instructions sent to your email",
+      forgotSuccess: "Account found. Email reset is not yet configured — please contact support.",
+      forgotUserNotFound: "No account found with this email",
 
       errEmailPasswordRequired: "Please enter email and password",
       errPasswordTooShort: "Password must be at least 6 characters",
@@ -348,6 +360,15 @@
       resetBakeBtn: "Reset & finish bake",
       resetBakeConfirm: "Reset the entire bake tracker and start over?",
 
+      chimeAutolyse: "🔔 Time for autolyse!",
+      chimeBulk: "🔔 Time to mix + start bulk!",
+      chimeFold: "🔔 Time for a fold!",
+      chimePreshape: "🔔 Pre-shape rest is done!",
+      chimeOven: "🔔 Preheat oven to 250°C!",
+      chimeCold: "🔔 Cold retard is done!",
+      chimeBakePhase1: "🔔 Phase 1 done! Adjust temp & open pot.",
+      chimeBakePhase2: "🔔 Baking complete! 🎉",
+
       tabRecipes: "My Recipes",
       bpCalcTitle: "Baker's percentage calculator",
       bpCalcSubtitle: "Calculate weights from baker's percentages",
@@ -431,7 +452,9 @@
     loadRefresh();
     if (isLoggedIn()) {
       var name = localStorage.getItem(SK.userName) || "";
-      $("header-greeting").textContent = name ? t("greeting") + name : "";
+      var email = localStorage.getItem(SK.userEmail) || "";
+      var display = name || email.split("@")[0] || "";
+      $("header-greeting").textContent = display ? t("greeting") + display : "";
     }
 
     // Re-render bake workflow if active
@@ -515,11 +538,43 @@
   }
 
   var chimeFired = {};
+  var toastTimeout = null;
+
+  function showToast(msg) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.classList.remove("hidden");
+    // Force reflow for transition
+    void el.offsetWidth;
+    el.classList.add("visible");
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function () {
+      el.classList.remove("visible");
+      setTimeout(function () { el.classList.add("hidden"); }, 300);
+    }, 5000);
+  }
+
+  /** Map chime keys to i18n notification keys */
+  var CHIME_MESSAGES = {
+    "autolyse": "chimeAutolyse",
+    "bulk": "chimeBulk",
+    "fold-fold-1": "chimeFold",
+    "fold-fold-2": "chimeFold",
+    "fold-fold-3": "chimeFold",
+    "fold-fold-4": "chimeFold",
+    "preshape-timer": "chimePreshape",
+    "oven": "chimeOven",
+    "cold-retard": "chimeCold",
+    "bake-phase1": "chimeBakePhase1",
+    "bake-phase2": "chimeBakePhase2",
+  };
 
   function checkChime(key, diff) {
     if (diff >= 0 && diff < 2000 && !chimeFired[key]) {
       chimeFired[key] = true;
       playChime();
+      var msgKey = CHIME_MESSAGES[key];
+      if (msgKey) showToast(t(msgKey));
     }
   }
 
@@ -673,7 +728,9 @@
     $("login-overlay").classList.add("hidden");
     $("app-shell").classList.remove("hidden");
     var name = localStorage.getItem(SK.userName) || "";
-    $("header-greeting").textContent = name ? t("greeting") + name : "";
+    var email = localStorage.getItem(SK.userEmail) || "";
+    var display = name || email.split("@")[0] || "";
+    $("header-greeting").textContent = display ? t("greeting") + display : "";
   }
 
   function showLogin() {
@@ -721,12 +778,11 @@
         showAuthSuccess(t("forgotSuccess"));
       }).catch(function (err) {
         if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-          // Offline: simulate success
-          showAuthSuccess(t("forgotSuccess"));
+          showAuthError(t("errGeneric"));
         } else if (err.serverError) {
           showAuthError(err.message);
         } else {
-          showAuthSuccess(t("forgotSuccess")); // Mock success
+          showAuthError(t("errGeneric"));
         }
       }).finally(function () {
         btn.textContent = t("authForgotBtn");
@@ -761,10 +817,10 @@
     if (isSignup) payload.name = name;
 
     apiAuth(isSignup ? "signup" : "login", payload).then(function (data) {
-      completeLogin(data.email || email, data.name || name);
+      completeLogin(data.email || email, data.name || name || "");
     }).catch(function (err) {
       if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-        completeLogin(email, name || email.split("@")[0]);
+        completeLogin(email, name || "");
       } else if (err.serverError) {
         showAuthError(err.message);
       } else {
@@ -1650,7 +1706,7 @@
         if (phase === "1" && !chimeFired["bake-phase1"]) {
           chimeFired["bake-phase1"] = true;
           playChime();
-          alert(t("bakePhaseAlert"));
+          showToast(t("chimeBakePhase1"));
           // Auto-start phase 2
           var s = getBakeState();
           if (s && !s.bakePhase2Start) {

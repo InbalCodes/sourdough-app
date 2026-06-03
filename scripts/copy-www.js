@@ -19,8 +19,8 @@ var FILES = [
   "manifest.json"
 ];
 
-// Directories to copy recursively (add "icons" here when you have one)
-var DIRS = [];
+// Directories to copy recursively
+var DIRS = ["assets"];
 
 // ── helpers ───────────────────────────────────────────────
 
