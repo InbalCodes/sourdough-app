@@ -16,7 +16,8 @@ var FILES = [
   "index.html",
   "app.js",
   "style.css",
-  "manifest.json"
+  "manifest.json",
+  "privacy.html"
 ];
 
 // Directories to copy recursively
