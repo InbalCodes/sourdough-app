@@ -570,6 +570,14 @@
 
   // Polling state for native auth
   var authPollTimer = null;
+  // Capacitor Browser plugin (for opening/closing Custom Chrome Tabs)
+  var CapBrowser = null;
+  if (isNative && window.Capacitor) {
+    CapBrowser = (window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) || null;
+    if (!CapBrowser && window.Capacitor.registerPlugin) {
+      try { CapBrowser = window.Capacitor.registerPlugin("Browser"); } catch (e) {}
+    }
+  }
 
   /**
    * Check on boot if we're returning from the Google OAuth callback (web only).
@@ -634,6 +642,8 @@
             // Got it!
             clearInterval(authPollTimer);
             authPollTimer = null;
+            // Close the Custom Chrome Tab
+            if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
             completeLogin(data.email, data.name || "");
           }
           // If data.pending, keep polling
@@ -667,8 +677,12 @@
         "&prompt=select_account" +
         "&access_type=online";
 
-      // Open in system browser — WebView stays untouched
-      window.open(authUrl, "_system");
+      // Open in Custom Chrome Tab (closeable) or fallback to system browser
+      if (CapBrowser && CapBrowser.open) {
+        CapBrowser.open({ url: authUrl });
+      } else {
+        window.open(authUrl, "_system");
+      }
 
       // Start polling for the result
       startPolling(token);
