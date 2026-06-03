@@ -12,3 +12,8 @@
   from = "/api/recipes"
   to = "/.netlify/functions/recipes"
   status = 200
+
+[[redirects]]
+  from = "/api/google-callback"
+  to = "/.netlify/functions/google-callback"
+  status = 200

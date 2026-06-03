@@ -562,129 +562,69 @@
     initApp();
   }
 
-  /** Decode the JWT credential from Google to extract user info */
-  function decodeJwt(token) {
-    try {
-      var base64Url = token.split(".")[1];
-      var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-      var json = decodeURIComponent(atob(base64).split("").map(function (c) {
-        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
-      }).join(""));
-      return JSON.parse(json);
-    } catch (e) {
-      return null;
-    }
-  }
+  // Detect native Capacitor environment (Android/iOS WebView)
+  var isNative = typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
+  var NETLIFY_ORIGIN = "https://sage-sherbet-8604b0.netlify.app";
+  var OAUTH_REDIRECT_URI = NETLIFY_ORIGIN + "/api/google-callback";
 
-  /** Handle the Google Sign-In credential response */
-  function handleGoogleCredential(response) {
-    var payload;
-    if (response._parsed) {
-      // From OAuth2 fallback flow
-      payload = response._parsed;
-    } else {
-      payload = decodeJwt(response.credential);
-    }
-    if (!payload || !payload.email) {
+  /**
+   * Check on boot if we're returning from the Google OAuth callback.
+   * The server redirects back with ?google_auth=1&email=...&name=...
+   */
+  function checkOAuthRedirect() {
+    var search = window.location.search;
+    if (!search || search.indexOf("google_auth") === -1) return false;
+
+    var params = {};
+    search.substring(1).split("&").forEach(function (part) {
+      var kv = part.split("=");
+      params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
+    });
+
+    // Clear query string so it doesn't linger
+    history.replaceState(null, "", window.location.pathname);
+
+    if (params.google_auth === "error") {
+      showLogin();
       showAuthError(t("errGeneric"));
-      return;
+      return true;
     }
 
-    var email = payload.email.toLowerCase();
-    var name = payload.name || "";
-
-    // Immediately log the user in
-    completeLogin(email, name);
-
-    // Upsert to Airtable in the background (fire-and-forget)
-    fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "google", email: email, name: name })
-    }).catch(function (e) {
-      console.warn("Airtable upsert failed (non-blocking):", e);
-    });
-  }
-
-  /** Initialize Google Identity Services once the library loads */
-  function initGoogleSignIn() {
-    if (typeof google === "undefined" || !google.accounts) {
-      // GIS library not loaded yet — retry shortly
-      setTimeout(initGoogleSignIn, 200);
-      return;
+    if (params.google_auth === "1" && params.email) {
+      completeLogin(params.email, params.name || "");
+      return true;
     }
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCredential,
-      auto_select: false,
-      cancel_on_tap_outside: true,
-    });
+
+    return false;
   }
 
-  // Start polling for GIS library readiness
-  initGoogleSignIn();
+  /** Start Google OAuth — redirects to Google, which redirects to our server callback */
+  function startGoogleOAuth() {
+    var state = isNative ? "native" : "web";
+    var authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
+      "?client_id=" + encodeURIComponent(GOOGLE_CLIENT_ID) +
+      "&redirect_uri=" + encodeURIComponent(OAUTH_REDIRECT_URI) +
+      "&response_type=code" +
+      "&scope=" + encodeURIComponent("email profile") +
+      "&state=" + state +
+      "&prompt=select_account" +
+      "&access_type=online";
+    window.location.href = authUrl;
+  }
 
-  // Google button click — trigger the One Tap / popup flow
+  // Google button click — same flow for web and native
   $("btn-google-signin").addEventListener("click", function () {
     hideAuthError();
     var btn = $("btn-google-signin");
     var label = btn.querySelector("span");
-    var origText = label.textContent;
     label.textContent = t("googleSignInLoading");
     btn.disabled = true;
-
-    if (typeof google !== "undefined" && google.accounts) {
-      google.accounts.id.prompt(function (notification) {
-        // Restore button in all cases
-        label.textContent = origText;
-        btn.disabled = false;
-
-        if (notification.isNotDisplayed()) {
-          // One Tap couldn't show (e.g. no Google session, popup blocked)
-          // Fall back to the standard popup sign-in
-          google.accounts.id.renderButton(
-            document.createElement("div"), // hidden placeholder
-            { type: "standard" }
-          );
-          // Try the explicit popup approach
-          google.accounts.oauth2.initTokenClient({
-            client_id: GOOGLE_CLIENT_ID,
-            scope: "email profile",
-            callback: function (tokenResponse) {
-              if (tokenResponse.access_token) {
-                fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
-                  headers: { Authorization: "Bearer " + tokenResponse.access_token }
-                }).then(function (r) { return r.json(); }).then(function (info) {
-                  handleGoogleCredential({
-                    credential: null,
-                    _parsed: { email: info.email, name: info.name }
-                  });
-                }).catch(function () {
-                  showAuthError(t("errGeneric"));
-                });
-              }
-            },
-          }).requestAccessToken();
-        } else if (notification.isSkippedMoment()) {
-          // User dismissed or cancelled
-          showAuthError(t("errGoogleCancelled"));
-        }
-        // If notification.isDisplayed() — the callback will fire via handleGoogleCredential
-      });
-    } else {
-      label.textContent = origText;
-      btn.disabled = false;
-      showAuthError(t("errGeneric"));
-    }
+    startGoogleOAuth();
   });
 
   $("btn-logout").addEventListener("click", function () {
     localStorage.removeItem(SK.userEmail);
     localStorage.removeItem(SK.userName);
-    // Revoke Google session if available
-    if (typeof google !== "undefined" && google.accounts) {
-      google.accounts.id.disableAutoSelect();
-    }
     showLogin();
   });
 
@@ -1842,12 +1782,17 @@
     applyTranslations();
   })();
 
+  // Boot: check if returning from OAuth redirect (native flow)
+  var handlingRedirect = checkOAuthRedirect();
+
   // Boot: check auth
-  if (isLoggedIn()) {
-    showApp();
-    initApp();
-  } else {
-    showLogin();
+  if (!handlingRedirect) {
+    if (isLoggedIn()) {
+      showApp();
+      initApp();
+    } else {
+      showLogin();
+    }
   }
 
   setInterval(updateAllTimers, 1000);
