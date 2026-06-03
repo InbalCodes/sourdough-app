@@ -43,9 +43,19 @@
       authToggleToLogin: "כבר יש לך חשבון?",
       authToggleToLoginBtn: "התחבר כאן",
 
+      confirmPasswordLabel: "אימות סיסמה",
+      confirmPasswordPlaceholder: "הזן שוב את הסיסמה",
+      forgotPasswordBtn: "שכחת סיסמה?",
+      authForgotTitle: "איפוס סיסמה",
+      authForgotBtn: "שלח הוראות איפוס",
+      authForgotLoading: "שולח...",
+      authBackToLogin: "חזור להתחברות",
+      forgotSuccess: "הוראות לאיפוס נשלחו למייל",
+
       // Auth errors
       errEmailPasswordRequired: "נא למלא אימייל וסיסמה",
       errPasswordTooShort: "הסיסמה חייבת להכיל לפחות 6 תווים",
+      errPasswordMismatch: "הסיסמאות אינן תואמות",
       errNameRequired: "נא למלא שם",
       errEmailExists: "האימייל הזה כבר רשום. נסו להתחבר.",
       errUserNotFound: "לא נמצא משתמש עם אימייל זה",
@@ -123,6 +133,16 @@
       stepOvenWaitingDesc: "יופעל שעה לפני סיום ההתפחה במקרר: לחמם תנור ל-250 מעלות!",
       stepScoreBake: "חריצה ואפייה",
       stepScoreBakeDesc: "חרצו את הבצק והכניסו לתנור.",
+
+      // 2-Phase baking
+      bakePhase1Title: "פאזה 1 — אפייה ראשונית",
+      bakePhase2Title: "פאזה 2 — השחמה",
+      bakeTempLabel: "טמפרטורה (°C)",
+      bakeMinLabel: "דקות",
+      btnStartBakePhase: "התחל אפייה",
+      bakePhase1Done: "פאזה 1 הסתיימה! שנו טמפרטורה ופתחו סיר.",
+      bakePhase2Done: "האפייה הסתיימה! 🎉",
+      bakePhaseAlert: "פאזה 1 הסתיימה! שנו טמפרטורה ופתחו סיר.",
 
       // Sub-steps & buttons
       btnStartAutolyse: "התחל אוטוליזה במקביל",
@@ -204,8 +224,18 @@
       authToggleToLogin: "Already have an account?",
       authToggleToLoginBtn: "Log in here",
 
+      confirmPasswordLabel: "Confirm password",
+      confirmPasswordPlaceholder: "Re-enter your password",
+      forgotPasswordBtn: "Forgot password?",
+      authForgotTitle: "Reset password",
+      authForgotBtn: "Send reset instructions",
+      authForgotLoading: "Sending...",
+      authBackToLogin: "Back to log in",
+      forgotSuccess: "Reset instructions sent to your email",
+
       errEmailPasswordRequired: "Please enter email and password",
       errPasswordTooShort: "Password must be at least 6 characters",
+      errPasswordMismatch: "Passwords do not match",
       errNameRequired: "Please enter your name",
       errEmailExists: "This email is already registered. Try logging in.",
       errUserNotFound: "No account found with this email",
@@ -276,6 +306,15 @@
       stepOvenWaitingDesc: "Will activate one hour before cold retard ends: preheat oven to 250°C!",
       stepScoreBake: "Score & bake",
       stepScoreBakeDesc: "Score the dough and place in the oven.",
+
+      bakePhase1Title: "Phase 1 — Initial bake",
+      bakePhase2Title: "Phase 2 — Crust browning",
+      bakeTempLabel: "Temperature (°C)",
+      bakeMinLabel: "Minutes",
+      btnStartBakePhase: "Start baking",
+      bakePhase1Done: "Phase 1 done! Adjust temp and open pot.",
+      bakePhase2Done: "Baking complete! 🎉",
+      bakePhaseAlert: "Phase 1 done! Adjust temperature and open the pot.",
 
       btnStartAutolyse: "Start autolyse in parallel",
       btnStartBulk: "Start bulk + fold timer",
@@ -488,7 +527,7 @@
   // Authentication (Sign Up / Log In)
   // =========================================
 
-  var authMode = "login"; // "login" or "signup"
+  var authMode = "login"; // "login", "signup", or "forgot"
 
   // Map server error codes to translation keys
   var ERROR_MAP = {
@@ -507,23 +546,61 @@
     var el = $("auth-error");
     el.textContent = msg;
     el.classList.remove("hidden");
+    $("auth-success").classList.add("hidden");
   }
 
-  function hideAuthError() {
+  function showAuthSuccess(msg) {
+    var el = $("auth-success");
+    el.textContent = msg;
+    el.classList.remove("hidden");
     $("auth-error").classList.add("hidden");
+  }
+
+  function hideAuthMessages() {
+    $("auth-error").classList.add("hidden");
+    $("auth-success").classList.add("hidden");
   }
 
   /** Update the login form UI to reflect current authMode */
   function updateAuthUI() {
     var isSignup = authMode === "signup";
+    var isForgot = authMode === "forgot";
     var nameField = $("name-field");
     var nameInput = $("login-name");
+    var confirmField = $("confirm-password-field");
+    var confirmInput = $("login-confirm-password");
+    var passwordField = $("login-password").parentElement;
     var submitBtn = $("auth-submit-btn");
     var title = $("auth-title");
+    var forgotLink = $("forgot-password-link");
 
-    if (isSignup) {
+    if (isForgot) {
+      // Forgot password mode: show only email
+      nameField.classList.add("hidden");
+      nameInput.required = false;
+      confirmField.classList.add("hidden");
+      confirmInput.required = false;
+      passwordField.classList.add("hidden");
+      $("login-password").required = false;
+      forgotLink.classList.add("hidden");
+
+      title.setAttribute("data-i18n", "authForgotTitle");
+      title.textContent = t("authForgotTitle");
+      submitBtn.setAttribute("data-i18n", "authForgotBtn");
+      submitBtn.textContent = t("authForgotBtn");
+
+      $("auth-toggle-text").textContent = "";
+      $("auth-toggle-btn").setAttribute("data-i18n", "authBackToLogin");
+      $("auth-toggle-btn").textContent = t("authBackToLogin");
+    } else if (isSignup) {
       nameField.classList.remove("hidden");
       nameInput.required = true;
+      confirmField.classList.remove("hidden");
+      confirmInput.required = true;
+      passwordField.classList.remove("hidden");
+      $("login-password").required = true;
+      forgotLink.classList.add("hidden");
+
       title.setAttribute("data-i18n", "authSignupTitle");
       title.textContent = t("authSignupTitle");
       submitBtn.setAttribute("data-i18n", "authSignupBtn");
@@ -533,8 +610,15 @@
       $("auth-toggle-btn").setAttribute("data-i18n", "authToggleToLoginBtn");
       $("auth-toggle-btn").textContent = t("authToggleToLoginBtn");
     } else {
+      // Login mode
       nameField.classList.add("hidden");
       nameInput.required = false;
+      confirmField.classList.add("hidden");
+      confirmInput.required = false;
+      passwordField.classList.remove("hidden");
+      $("login-password").required = true;
+      forgotLink.classList.remove("hidden");
+
       title.setAttribute("data-i18n", "authLoginTitle");
       title.textContent = t("authLoginTitle");
       submitBtn.setAttribute("data-i18n", "authLoginBtn");
@@ -544,11 +628,20 @@
       $("auth-toggle-btn").setAttribute("data-i18n", "authToggleToSignupBtn");
       $("auth-toggle-btn").textContent = t("authToggleToSignupBtn");
     }
-    hideAuthError();
+    hideAuthMessages();
   }
 
   $("auth-toggle-btn").addEventListener("click", function () {
-    authMode = authMode === "login" ? "signup" : "login";
+    if (authMode === "forgot") {
+      authMode = "login";
+    } else {
+      authMode = authMode === "login" ? "signup" : "login";
+    }
+    updateAuthUI();
+  });
+
+  $("btn-forgot-password").addEventListener("click", function () {
+    authMode = "forgot";
     updateAuthUI();
   });
 
@@ -596,22 +689,53 @@
     // Clear form
     $("login-email").value = "";
     $("login-password").value = "";
+    $("login-confirm-password").value = "";
     $("login-name").value = "";
-    hideAuthError();
+    hideAuthMessages();
     showApp();
     initApp();
   }
 
   $("login-form").addEventListener("submit", function (e) {
     e.preventDefault();
-    hideAuthError();
+    hideAuthMessages();
 
     var email = $("login-email").value.trim();
     var password = $("login-password").value;
+    var confirmPw = $("login-confirm-password").value;
     var name = $("login-name").value.trim();
     var isSignup = authMode === "signup";
+    var isForgot = authMode === "forgot";
 
-    // Client-side validation
+    // --- Forgot password flow ---
+    if (isForgot) {
+      if (!email) {
+        showAuthError(t("errEmailPasswordRequired"));
+        return;
+      }
+      var btn = $("auth-submit-btn");
+      btn.textContent = t("authForgotLoading");
+      btn.disabled = true;
+
+      apiAuth("forgot", { email: email, password: "x" }).then(function () {
+        showAuthSuccess(t("forgotSuccess"));
+      }).catch(function (err) {
+        if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
+          // Offline: simulate success
+          showAuthSuccess(t("forgotSuccess"));
+        } else if (err.serverError) {
+          showAuthError(err.message);
+        } else {
+          showAuthSuccess(t("forgotSuccess")); // Mock success
+        }
+      }).finally(function () {
+        btn.textContent = t("authForgotBtn");
+        btn.disabled = false;
+      });
+      return;
+    }
+
+    // --- Login / Signup ---
     if (!email || !password) {
       showAuthError(t("errEmailPasswordRequired"));
       return;
@@ -622,6 +746,10 @@
     }
     if (isSignup && !name) {
       showAuthError(t("errNameRequired"));
+      return;
+    }
+    if (isSignup && password !== confirmPw) {
+      showAuthError(t("errPasswordMismatch"));
       return;
     }
 
@@ -636,7 +764,6 @@
       completeLogin(data.email || email, data.name || name);
     }).catch(function (err) {
       if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-        // Offline fallback for local dev
         completeLogin(email, name || email.split("@")[0]);
       } else if (err.serverError) {
         showAuthError(err.message);
@@ -932,6 +1059,12 @@
       preShapeStart: null,
       coldStart: null,
       coldHours: LIFESTYLES[lifestyle].coldDefault,
+      bakePhase1Start: null,
+      bakePhase2Start: null,
+      bakePhase1Temp: 250,
+      bakePhase1Min: 20,
+      bakePhase2Temp: 220,
+      bakePhase2Min: 20,
     });
     chimeFired = {};
     renderBakeUI();
@@ -1018,7 +1151,7 @@
     }
 
     steps.push({ id: "score-bake", name: t("stepScoreBake"),
-      desc: t("stepScoreBakeDesc") });
+      desc: t("stepScoreBakeDesc"), bakePhaseStep: true });
 
     return steps;
   }
@@ -1123,9 +1256,154 @@
     }
 
     if (step.coldStep) body.appendChild(createColdControls(state));
+    if (step.bakePhaseStep) body.appendChild(createBakePhaseControls(state));
 
     li.appendChild(body);
     return li;
+  }
+
+  // --- 2-Phase Bake Controls ---
+
+  function createBakePhaseControls(state) {
+    var c = document.createElement("div");
+    c.className = "bake-phases";
+
+    var p1Start = toMs(state.bakePhase1Start);
+    var p2Start = toMs(state.bakePhase2Start);
+    var p1Min = state.bakePhase1Min || 20;
+    var p2Min = state.bakePhase2Min || 20;
+    var p1Temp = state.bakePhase1Temp || 250;
+    var p2Temp = state.bakePhase2Temp || 220;
+
+    // --- Phase 1 card ---
+    var card1 = document.createElement("div");
+    card1.className = "bake-phase-card";
+    if (p1Start && !p2Start) card1.classList.add("active-phase");
+
+    var h1 = document.createElement("div");
+    h1.className = "bake-phase-header";
+    h1.textContent = t("bakePhase1Title");
+    card1.appendChild(h1);
+
+    var inputs1 = document.createElement("div");
+    inputs1.className = "bake-phase-inputs";
+
+    var tempWrap1 = document.createElement("div"); tempWrap1.className = "bake-phase-input";
+    var tempLbl1 = document.createElement("label"); tempLbl1.textContent = t("bakeTempLabel"); tempWrap1.appendChild(tempLbl1);
+    var tempInp1 = document.createElement("input"); tempInp1.type = "number"; tempInp1.value = p1Temp; tempInp1.min = "100"; tempInp1.max = "350";
+    if (p1Start) tempInp1.disabled = true;
+    tempInp1.addEventListener("change", function () {
+      var s = getBakeState(); if (!s) return;
+      s.bakePhase1Temp = parseInt(tempInp1.value, 10) || 250;
+      saveBakeState(s);
+    });
+    tempWrap1.appendChild(tempInp1);
+    inputs1.appendChild(tempWrap1);
+
+    var minWrap1 = document.createElement("div"); minWrap1.className = "bake-phase-input";
+    var minLbl1 = document.createElement("label"); minLbl1.textContent = t("bakeMinLabel"); minWrap1.appendChild(minLbl1);
+    var minInp1 = document.createElement("input"); minInp1.type = "number"; minInp1.value = p1Min; minInp1.min = "1"; minInp1.max = "120";
+    if (p1Start) minInp1.disabled = true;
+    minInp1.addEventListener("change", function () {
+      var s = getBakeState(); if (!s) return;
+      s.bakePhase1Min = parseInt(minInp1.value, 10) || 20;
+      saveBakeState(s);
+    });
+    minWrap1.appendChild(minInp1);
+    inputs1.appendChild(minWrap1);
+    card1.appendChild(inputs1);
+
+    if (p1Start) {
+      var p1End = p1Start + p1Min * 60000;
+      if (p2Start || Date.now() >= p1End) {
+        var done1 = document.createElement("div");
+        done1.className = "bake-phase-done";
+        done1.textContent = t("bakePhase1Done");
+        card1.appendChild(done1);
+      } else {
+        var timer1 = document.createElement("div");
+        timer1.className = "bake-phase-timer";
+        timer1.dataset.phaseend = String(p1End);
+        timer1.dataset.phase = "1";
+        card1.appendChild(timer1);
+      }
+    }
+    c.appendChild(card1);
+
+    // --- Phase 2 card ---
+    var card2 = document.createElement("div");
+    card2.className = "bake-phase-card";
+    if (p2Start) card2.classList.add("active-phase");
+
+    var h2 = document.createElement("div");
+    h2.className = "bake-phase-header";
+    h2.textContent = t("bakePhase2Title");
+    card2.appendChild(h2);
+
+    var inputs2 = document.createElement("div");
+    inputs2.className = "bake-phase-inputs";
+
+    var tempWrap2 = document.createElement("div"); tempWrap2.className = "bake-phase-input";
+    var tempLbl2 = document.createElement("label"); tempLbl2.textContent = t("bakeTempLabel"); tempWrap2.appendChild(tempLbl2);
+    var tempInp2 = document.createElement("input"); tempInp2.type = "number"; tempInp2.value = p2Temp; tempInp2.min = "100"; tempInp2.max = "350";
+    if (p2Start) tempInp2.disabled = true;
+    tempInp2.addEventListener("change", function () {
+      var s = getBakeState(); if (!s) return;
+      s.bakePhase2Temp = parseInt(tempInp2.value, 10) || 220;
+      saveBakeState(s);
+    });
+    tempWrap2.appendChild(tempInp2);
+    inputs2.appendChild(tempWrap2);
+
+    var minWrap2 = document.createElement("div"); minWrap2.className = "bake-phase-input";
+    var minLbl2 = document.createElement("label"); minLbl2.textContent = t("bakeMinLabel"); minWrap2.appendChild(minLbl2);
+    var minInp2 = document.createElement("input"); minInp2.type = "number"; minInp2.value = p2Min; minInp2.min = "1"; minInp2.max = "120";
+    if (p2Start) minInp2.disabled = true;
+    minInp2.addEventListener("change", function () {
+      var s = getBakeState(); if (!s) return;
+      s.bakePhase2Min = parseInt(minInp2.value, 10) || 20;
+      saveBakeState(s);
+    });
+    minWrap2.appendChild(minInp2);
+    inputs2.appendChild(minWrap2);
+    card2.appendChild(inputs2);
+
+    if (p2Start) {
+      var p2End = p2Start + p2Min * 60000;
+      if (Date.now() >= p2End) {
+        var done2 = document.createElement("div");
+        done2.className = "bake-phase-done";
+        done2.textContent = t("bakePhase2Done");
+        card2.appendChild(done2);
+      } else {
+        var timer2 = document.createElement("div");
+        timer2.className = "bake-phase-timer";
+        timer2.dataset.phaseend = String(p2End);
+        timer2.dataset.phase = "2";
+        card2.appendChild(timer2);
+      }
+    }
+    c.appendChild(card2);
+
+    // --- Start button ---
+    if (!p1Start) {
+      var startBtn = document.createElement("button");
+      startBtn.className = "btn-start-bake-phase";
+      startBtn.textContent = t("btnStartBakePhase");
+      startBtn.addEventListener("click", function () {
+        var s = getBakeState(); if (!s) return;
+        s.bakePhase1Temp = parseInt(tempInp1.value, 10) || 250;
+        s.bakePhase1Min = parseInt(minInp1.value, 10) || 20;
+        s.bakePhase2Temp = parseInt(tempInp2.value, 10) || 220;
+        s.bakePhase2Min = parseInt(minInp2.value, 10) || 20;
+        s.bakePhase1Start = new Date().toISOString();
+        saveBakeState(s);
+        renderBakeUI();
+      });
+      c.appendChild(startBtn);
+    }
+
+    return c;
   }
 
   // --- Bulk Sub-Steps ---
@@ -1355,6 +1633,35 @@
       } else {
         el.textContent = t("coldReady");
         if (el.dataset.chimekey) checkChime(el.dataset.chimekey, -diff);
+      }
+    });
+
+    // --- 2-Phase Bake Timers ---
+    document.querySelectorAll(".bake-phase-timer[data-phaseend]").forEach(function (el) {
+      var endTs = Number(el.dataset.phaseend);
+      var remaining = endTs - now;
+      if (remaining > 0) {
+        var min = Math.floor(remaining / 60000);
+        var sec = Math.floor((remaining % 60000) / 1000);
+        el.textContent = String(min).padStart(2, "0") + ":" + String(sec).padStart(2, "0");
+      } else {
+        el.textContent = "00:00";
+        var phase = el.dataset.phase;
+        if (phase === "1" && !chimeFired["bake-phase1"]) {
+          chimeFired["bake-phase1"] = true;
+          playChime();
+          alert(t("bakePhaseAlert"));
+          // Auto-start phase 2
+          var s = getBakeState();
+          if (s && !s.bakePhase2Start) {
+            s.bakePhase2Start = new Date().toISOString();
+            saveBakeState(s);
+            renderBakeUI();
+          }
+        }
+        if (phase === "2") {
+          checkChime("bake-phase2", now - endTs);
+        }
       }
     });
   }

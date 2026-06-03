@@ -37,9 +37,17 @@
           <label for="login-password" data-i18n="passwordLabel">סיסמה</label>
           <input id="login-password" type="password" data-i18n-placeholder="passwordPlaceholder" placeholder="6 תווים לפחות" required minlength="6">
         </div>
+        <div id="confirm-password-field" class="auth-field hidden">
+          <label for="login-confirm-password" data-i18n="confirmPasswordLabel">אימות סיסמה</label>
+          <input id="login-confirm-password" type="password" data-i18n-placeholder="confirmPasswordPlaceholder" placeholder="הזן שוב את הסיסמה">
+        </div>
         <p id="auth-error" class="auth-error hidden"></p>
+        <p id="auth-success" class="auth-success hidden"></p>
         <button type="submit" id="auth-submit-btn" class="btn btn-primary btn-large" data-i18n="authLoginBtn">התחבר</button>
       </form>
+      <p id="forgot-password-link" class="forgot-password-row">
+        <button type="button" id="btn-forgot-password" class="auth-toggle-btn" data-i18n="forgotPasswordBtn">שכחת סיסמה?</button>
+      </p>
       <p class="auth-toggle-row">
         <span id="auth-toggle-text" data-i18n="authToggleToSignup">אין לך חשבון?</span>
         <button type="button" id="auth-toggle-btn" class="auth-toggle-btn" data-i18n="authToggleToSignupBtn">הרשם כאן</button>

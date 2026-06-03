@@ -157,6 +157,20 @@ exports.handler = async function (event) {
       };
     }
 
+    // ========================
+    // FORGOT PASSWORD (mock)
+    // ========================
+    if (action === "forgot") {
+      if (!existing) {
+        return { statusCode: 401, body: JSON.stringify({ error: "USER_NOT_FOUND" }) };
+      }
+      // TODO: integrate SMTP provider to send actual reset email
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, message: "RESET_SENT" })
+      };
+    }
+
     return { statusCode: 400, body: JSON.stringify({ error: "INVALID_ACTION" }) };
 
   } catch (err) {
