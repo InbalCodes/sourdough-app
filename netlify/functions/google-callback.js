@@ -29,7 +29,9 @@ function nativeDonePage(success) {
       '.card{max-width:320px}.title{font-size:2rem;font-weight:300;letter-spacing:.1em;margin-bottom:16px}' +
       'p{font-size:.95rem;color:#6B7280;line-height:1.6}</style></head>' +
       '<body><div class="card"><div class="title">Levain</div>' +
-      '<p>' + msg + '</p></div></body></html>'
+      '<p>' + msg + '</p></div>' +
+      '<script>setTimeout(function(){window.close()},1000);</script>' +
+      '</body></html>'
   };
 }
 
