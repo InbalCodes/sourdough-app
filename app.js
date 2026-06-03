@@ -565,6 +565,7 @@
   // Detect native Capacitor environment (Android/iOS WebView)
   var isNative = typeof window.Capacitor !== "undefined" && window.Capacitor.isNativePlatform && window.Capacitor.isNativePlatform();
   var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
+  var API_BASE = isNative ? NETLIFY_ORIGIN : "";
   var OAUTH_REDIRECT_URI = NETLIFY_ORIGIN + "/api/google-callback";
 
   // Polling state for native auth
@@ -1637,7 +1638,7 @@
     var email = getUserEmail();
     if (!email) return [];
     try {
-      var res = await fetch("/api/recipes", {
+      var res = await fetch(API_BASE + "/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "list", userEmail: email })
@@ -1658,7 +1659,7 @@
     var email = getUserEmail();
     if (!email) return null;
     try {
-      var res = await fetch("/api/recipes", {
+      var res = await fetch(API_BASE + "/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "save", userEmail: email, recipe: recipe })
@@ -1678,7 +1679,7 @@
     var email = getUserEmail();
     if (!email) return false;
     try {
-      var res = await fetch("/api/recipes", {
+      var res = await fetch(API_BASE + "/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "delete", userEmail: email, recordId: recordId })
