@@ -567,9 +567,11 @@
   var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
   var OAUTH_REDIRECT_URI = NETLIFY_ORIGIN + "/api/google-callback";
 
+  // Polling state for native auth
+  var authPollTimer = null;
+
   /**
    * Check on boot if we're returning from the Google OAuth callback (web only).
-   * The server redirects back with ?google_auth=1&email=...&name=...
    */
   function checkOAuthRedirect() {
     var search = window.location.search;
@@ -581,7 +583,6 @@
       params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
     });
 
-    // Clear query string so it doesn't linger
     history.replaceState(null, "", window.location.pathname);
 
     if (params.google_auth === "error") {
@@ -598,85 +599,88 @@
     return false;
   }
 
-  /**
-   * Parse query params from a URL string.
-   */
-  function parseUrlParams(url) {
-    var params = {};
-    var qIdx = url.indexOf("?");
-    if (qIdx === -1) return params;
-    url.substring(qIdx + 1).split("&").forEach(function (part) {
-      var kv = part.split("=");
-      params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
-    });
-    return params;
+  /** Generate a random token for native OAuth polling */
+  function generateToken() {
+    var chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    var token = "";
+    for (var i = 0; i < 32; i++) {
+      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return token;
   }
 
-  /**
-   * Handle deep link auth data (from appUrlOpen or getLaunchUrl).
-   */
-  function handleDeepLink(url) {
-    if (!url || url.indexOf("com.inbal.levain://") === -1) return false;
-    var params = parseUrlParams(url);
-    if (params.google_auth === "1" && params.email) {
-      completeLogin(params.email, params.name || "");
-      return true;
-    }
-    if (params.google_auth === "error" || params.google_auth === "cancel") {
-      showLogin();
-      showAuthError(t("errGoogleCancelled"));
-      return true;
-    }
-    return false;
+  /** Poll the server for OAuth result (native flow) */
+  function startPolling(token) {
+    var attempts = 0;
+    var maxAttempts = 60; // 2 minutes at 2-second intervals
+
+    authPollTimer = setInterval(function () {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(authPollTimer);
+        authPollTimer = null;
+        showAuthError(t("errGeneric"));
+        var btn = $("btn-google-signin");
+        btn.querySelector("span").textContent = t("googleSignInBtn");
+        btn.disabled = false;
+        return;
+      }
+
+      fetch(NETLIFY_ORIGIN + "/api/auth-result?token=" + encodeURIComponent(token))
+        .then(function (res) { return res.json(); })
+        .then(function (data) {
+          if (data.success && data.email) {
+            // Got it!
+            clearInterval(authPollTimer);
+            authPollTimer = null;
+            completeLogin(data.email, data.name || "");
+          }
+          // If data.pending, keep polling
+        })
+        .catch(function () {
+          // Network error, keep trying
+        });
+    }, 2000);
   }
 
-  /**
-   * Native: set up deep link listeners using Capacitor's registerPlugin pattern.
-   * Also check if the app was launched via a deep link.
-   */
-  if (isNative) {
-    // Capacitor 8 registers plugins via Capacitor.registerPlugin
-    var CapApp = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) ||
-                 (window.Capacitor && window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("App"));
-    var CapBrowser = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) ||
-                     (window.Capacitor && window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("Browser"));
-
-    if (CapApp) {
-      // Listen for deep links when app is already running
-      CapApp.addListener("appUrlOpen", function (data) {
-        if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
-        handleDeepLink(data.url || "");
-      });
-
-      // Check if app was LAUNCHED via a deep link
-      CapApp.getLaunchUrl().then(function (result) {
-        if (result && result.url) {
-          handleDeepLink(result.url);
-        }
-      }).catch(function () {});
+  /** Stop polling if active */
+  function stopPolling() {
+    if (authPollTimer) {
+      clearInterval(authPollTimer);
+      authPollTimer = null;
     }
-
-    console.log("[Levain] isNative:", isNative, "CapApp:", !!CapApp, "CapBrowser:", !!CapBrowser);
   }
 
   /** Start Google OAuth */
   function startGoogleOAuth() {
-    var state = isNative ? "native" : "web";
-    var authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
-      "?client_id=" + encodeURIComponent(GOOGLE_CLIENT_ID) +
-      "&redirect_uri=" + encodeURIComponent(OAUTH_REDIRECT_URI) +
-      "&response_type=code" +
-      "&scope=" + encodeURIComponent("email profile") +
-      "&state=" + state +
-      "&prompt=select_account" +
-      "&access_type=online";
-
     if (isNative) {
-      // MUST open in system browser — never navigate the WebView away from localhost
-      console.log("[Levain] Opening OAuth in system browser");
+      // Native: generate token, open system browser, poll for result
+      var token = generateToken();
+      var state = "native_" + token;
+      var authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
+        "?client_id=" + encodeURIComponent(GOOGLE_CLIENT_ID) +
+        "&redirect_uri=" + encodeURIComponent(OAUTH_REDIRECT_URI) +
+        "&response_type=code" +
+        "&scope=" + encodeURIComponent("email profile") +
+        "&state=" + encodeURIComponent(state) +
+        "&prompt=select_account" +
+        "&access_type=online";
+
+      // Open in system browser — WebView stays untouched
       window.open(authUrl, "_system");
+
+      // Start polling for the result
+      startPolling(token);
     } else {
-      // Web: navigate directly
+      // Web: direct redirect
+      var authUrl = "https://accounts.google.com/o/oauth2/v2/auth" +
+        "?client_id=" + encodeURIComponent(GOOGLE_CLIENT_ID) +
+        "&redirect_uri=" + encodeURIComponent(OAUTH_REDIRECT_URI) +
+        "&response_type=code" +
+        "&scope=" + encodeURIComponent("email profile") +
+        "&state=web" +
+        "&prompt=select_account" +
+        "&access_type=online";
       window.location.href = authUrl;
     }
   }
@@ -684,23 +688,17 @@
   // Google button click
   $("btn-google-signin").addEventListener("click", function () {
     hideAuthError();
+    stopPolling();
     var btn = $("btn-google-signin");
     var label = btn.querySelector("span");
     label.textContent = t("googleSignInLoading");
     btn.disabled = true;
 
     startGoogleOAuth();
-
-    // For native, restore button after a delay (user may cancel or return)
-    if (isNative) {
-      setTimeout(function () {
-        label.textContent = t("googleSignInBtn");
-        btn.disabled = false;
-      }, 3000);
-    }
   });
 
   $("btn-logout").addEventListener("click", function () {
+    stopPolling();
     localStorage.removeItem(SK.userEmail);
     localStorage.removeItem(SK.userName);
     showLogin();

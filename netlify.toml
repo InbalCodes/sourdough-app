@@ -17,3 +17,8 @@
   from = "/api/google-callback"
   to = "/.netlify/functions/google-callback"
   status = 200
+
+[[redirects]]
+  from = "/api/auth-result"
+  to = "/.netlify/functions/auth-result"
+  status = 200

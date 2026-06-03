@@ -1,19 +1,24 @@
 // Netlify serverless function — Google OAuth2 callback.
-// Exchanges auth code for user info, upserts to Airtable, redirects back to app.
+// Exchanges auth code for user info, upserts to Airtable Users,
+// stores result in PendingAuth for native polling, or redirects for web.
 
 var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
 
-/**
- * Return an HTML page that opens the native app via an Android Intent URL.
- * Intent URLs are the most reliable way to open an app from Chrome on modern Android.
- * The custom scheme URL is used as fallback for the manual tap link.
- */
-function nativeRedirectPage(queryString) {
-  // Android Intent URL — Chrome natively handles intent:// URIs
-  var intentUrl = "intent://callback/" + queryString +
-    "#Intent;scheme=com.inbal.levain;package=com.inbal.levain;end";
-  var customSchemeUrl = "com.inbal.levain://callback/" + queryString;
+function airtableUrl(base, table, recordId) {
+  var url = "https://api.airtable.com/v0/" + base + "/" + encodeURIComponent(table);
+  if (recordId) url += "/" + recordId;
+  return url;
+}
 
+function airtableHeaders(token) {
+  return { Authorization: "Bearer " + token, "Content-Type": "application/json" };
+}
+
+/** Show a styled page telling the user to return to the app */
+function nativeDonePage(success) {
+  var msg = success
+    ? "Authentication complete — return to the Levain app."
+    : "Authentication failed — return to the Levain app and try again.";
   return {
     statusCode: 200,
     headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -22,27 +27,24 @@ function nativeRedirectPage(queryString) {
       '<style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;' +
       'justify-content:center;min-height:100vh;background:#FDFBF7;color:#2C3531;text-align:center;padding:24px}' +
       '.card{max-width:320px}.title{font-size:2rem;font-weight:300;letter-spacing:.1em;margin-bottom:16px}' +
-      'p{font-size:.9rem;color:#6B7280;margin-bottom:24px}' +
-      'a{display:block;padding:14px 24px;background:#2C3531;color:#FDFBF7;border-radius:12px;' +
-      'text-decoration:none;font-weight:600;font-size:.95rem}</style></head>' +
+      'p{font-size:.95rem;color:#6B7280;line-height:1.6}</style></head>' +
       '<body><div class="card"><div class="title">Levain</div>' +
-      '<p>Authentication complete</p>' +
-      '<a href="' + customSchemeUrl + '">Tap to return to Levain</a>' +
-      '<script>window.location.href="' + intentUrl + '";</script>' +
-      '</div></body></html>'
+      '<p>' + msg + '</p></div></body></html>'
   };
 }
 
 exports.handler = async function (event) {
   var params = event.queryStringParameters || {};
   var code = params.code;
-  var state = params.state || "web"; // "native" or "web"
+  var state = params.state || "web";
   var error = params.error;
 
+  // Parse state: "web" or "native_TOKENXXX"
+  var isNativeFlow = state.indexOf("native_") === 0;
+  var authToken = isNativeFlow ? state.substring(7) : "";
+
   if (error || !code) {
-    if (state === "native") {
-      return nativeRedirectPage("?google_auth=cancel");
-    }
+    if (isNativeFlow) return nativeDonePage(false);
     return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/" }, body: "" };
   }
 
@@ -52,7 +54,7 @@ exports.handler = async function (event) {
   var AIRTABLE_BASE = process.env.AIRTABLE_BASE_ID;
   var REDIRECT_URI = NETLIFY_ORIGIN + "/api/google-callback";
 
-  if (!GOOGLE_CLIENT_ID || !GOOGLE_CLIENT_SECRET) {
+  if (!GOOGLE_CLIENT_SECRET) {
     return { statusCode: 500, body: "Google OAuth not configured" };
   }
 
@@ -70,9 +72,7 @@ exports.handler = async function (event) {
 
     if (!tokenRes.ok) {
       console.error("Token exchange failed:", await tokenRes.text());
-      if (state === "native") {
-        return nativeRedirectPage("?google_auth=error");
-      }
+      if (isNativeFlow) return nativeDonePage(false);
       return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
     }
 
@@ -85,9 +85,7 @@ exports.handler = async function (event) {
 
     if (!userRes.ok) {
       console.error("User info fetch failed:", await userRes.text());
-      if (state === "native") {
-        return nativeRedirectPage("?google_auth=error");
-      }
+      if (isNativeFlow) return nativeDonePage(false);
       return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
     }
 
@@ -95,14 +93,14 @@ exports.handler = async function (event) {
     var email = (userInfo.email || "").toLowerCase();
     var name = userInfo.name || "";
 
-    // 3. Upsert to Airtable (best-effort)
+    // 3. Upsert to Airtable Users (best-effort)
     if (AIRTABLE_TOKEN && AIRTABLE_BASE && email) {
       try {
-        var TABLE = "Users";
-        var baseUrl = "https://api.airtable.com/v0/" + AIRTABLE_BASE + "/" + encodeURIComponent(TABLE);
-        var headers = { Authorization: "Bearer " + AIRTABLE_TOKEN, "Content-Type": "application/json" };
+        var USERS_TABLE = "Users";
+        var usersUrl = airtableUrl(AIRTABLE_BASE, USERS_TABLE);
+        var headers = airtableHeaders(AIRTABLE_TOKEN);
 
-        var lookupUrl = baseUrl + "?filterByFormula=" +
+        var lookupUrl = usersUrl + "?filterByFormula=" +
           encodeURIComponent('{Email}="' + email.replace(/"/g, '\\"') + '"') + "&maxRecords=1";
         var lookupRes = await fetch(lookupUrl, { headers: { Authorization: "Bearer " + AIRTABLE_TOKEN } });
         var lookupData = await lookupRes.json();
@@ -110,29 +108,39 @@ exports.handler = async function (event) {
 
         if (existing) {
           if (name && name !== (existing.fields.Name || "")) {
-            await fetch(baseUrl + "/" + existing.id, {
+            await fetch(usersUrl + "/" + existing.id, {
               method: "PATCH", headers: headers,
               body: JSON.stringify({ fields: { Name: name } })
             });
           }
         } else {
-          await fetch(baseUrl, {
+          await fetch(usersUrl, {
             method: "POST", headers: headers,
             body: JSON.stringify({ fields: { Name: name, Email: email } })
           });
         }
       } catch (e) {
-        console.warn("Airtable upsert failed (non-blocking):", e);
+        console.warn("Airtable Users upsert failed:", e);
       }
     }
 
-    // 4. Redirect back to app
-    if (state === "native") {
-      var qs = "?google_auth=1&email=" + encodeURIComponent(email) +
-        "&name=" + encodeURIComponent(name);
-      return nativeRedirectPage(qs);
+    // 4a. Native flow: store result in PendingAuth table for polling
+    if (isNativeFlow && authToken && AIRTABLE_TOKEN && AIRTABLE_BASE) {
+      try {
+        await fetch(airtableUrl(AIRTABLE_BASE, "PendingAuth"), {
+          method: "POST",
+          headers: airtableHeaders(AIRTABLE_TOKEN),
+          body: JSON.stringify({
+            fields: { Token: authToken, Email: email, Name: name }
+          })
+        });
+      } catch (e) {
+        console.error("PendingAuth store failed:", e);
+      }
+      return nativeDonePage(true);
     }
 
+    // 4b. Web flow: redirect back with params
     var returnUrl = NETLIFY_ORIGIN + "/?google_auth=1" +
       "&email=" + encodeURIComponent(email) +
       "&name=" + encodeURIComponent(name);
@@ -140,9 +148,7 @@ exports.handler = async function (event) {
 
   } catch (err) {
     console.error("Google callback error:", err);
-    if (state === "native") {
-      return nativeRedirectPage("?google_auth=error");
-    }
+    if (isNativeFlow) return nativeDonePage(false);
     return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
   }
 };
