@@ -26,41 +26,9 @@
     he: {
       // Auth
       loginSubtitle: "העוזר האישי שלך לאפייה שקטה",
-      authLoginTitle: "התחברות",
-      authSignupTitle: "הרשמה",
-      emailLabel: "אימייל",
-      emailPlaceholder: "you@example.com",
-      passwordLabel: "סיסמה",
-      passwordPlaceholder: "6 תווים לפחות",
-      nameLabel: "שם אופה",
-      namePlaceholder: "השם שלך",
-      authLoginBtn: "התחבר",
-      authSignupBtn: "הרשם",
-      authLoginLoading: "מתחבר...",
-      authSignupLoading: "נרשם...",
-      authToggleToSignup: "אין לך חשבון?",
-      authToggleToSignupBtn: "הרשם כאן",
-      authToggleToLogin: "כבר יש לך חשבון?",
-      authToggleToLoginBtn: "התחבר כאן",
-
-      confirmPasswordLabel: "אימות סיסמה",
-      confirmPasswordPlaceholder: "הזן שוב את הסיסמה",
-      forgotPasswordBtn: "שכחת סיסמה?",
-      authForgotTitle: "איפוס סיסמה",
-      authForgotBtn: "שלח הוראות איפוס",
-      authForgotLoading: "בודק...",
-      authBackToLogin: "חזור להתחברות",
-      forgotSuccess: "המשתמש נמצא. שליחת מייל איפוס עדיין לא מוגדרת — צרו קשר עם התמיכה.",
-      forgotUserNotFound: "לא נמצא חשבון עם אימייל זה",
-
-      // Auth errors
-      errEmailPasswordRequired: "נא למלא אימייל וסיסמה",
-      errPasswordTooShort: "הסיסמה חייבת להכיל לפחות 6 תווים",
-      errPasswordMismatch: "הסיסמאות אינן תואמות",
-      errNameRequired: "נא למלא שם",
-      errEmailExists: "האימייל הזה כבר רשום. נסו להתחבר.",
-      errUserNotFound: "לא נמצא משתמש עם אימייל זה",
-      errWrongPassword: "סיסמה שגויה",
+      googleSignInBtn: "התחברות באמצעות Google",
+      googleSignInLoading: "מתחבר...",
+      errGoogleCancelled: "ההתחברות בוטלה",
       errGeneric: "משהו השתבש. נסו שנית.",
 
       // Lang toggle
@@ -221,40 +189,9 @@
 
     en: {
       loginSubtitle: "Your personal quiet baking assistant",
-      authLoginTitle: "Log in",
-      authSignupTitle: "Sign up",
-      emailLabel: "Email",
-      emailPlaceholder: "you@example.com",
-      passwordLabel: "Password",
-      passwordPlaceholder: "At least 6 characters",
-      nameLabel: "Baker name",
-      namePlaceholder: "Your name",
-      authLoginBtn: "Log in",
-      authSignupBtn: "Sign up",
-      authLoginLoading: "Logging in...",
-      authSignupLoading: "Signing up...",
-      authToggleToSignup: "Don't have an account?",
-      authToggleToSignupBtn: "Sign up here",
-      authToggleToLogin: "Already have an account?",
-      authToggleToLoginBtn: "Log in here",
-
-      confirmPasswordLabel: "Confirm password",
-      confirmPasswordPlaceholder: "Re-enter your password",
-      forgotPasswordBtn: "Forgot password?",
-      authForgotTitle: "Reset password",
-      authForgotBtn: "Send reset instructions",
-      authForgotLoading: "Checking...",
-      authBackToLogin: "Back to log in",
-      forgotSuccess: "Account found. Email reset is not yet configured — please contact support.",
-      forgotUserNotFound: "No account found with this email",
-
-      errEmailPasswordRequired: "Please enter email and password",
-      errPasswordTooShort: "Password must be at least 6 characters",
-      errPasswordMismatch: "Passwords do not match",
-      errNameRequired: "Please enter your name",
-      errEmailExists: "This email is already registered. Try logging in.",
-      errUserNotFound: "No account found with this email",
-      errWrongPassword: "Incorrect password",
+      googleSignInBtn: "Sign in with Google",
+      googleSignInLoading: "Signing in...",
+      errGoogleCancelled: "Sign-in was cancelled",
       errGeneric: "Something went wrong. Please try again.",
 
       langToggle: "עב",
@@ -451,9 +388,6 @@
 
     applyTranslations();
 
-    // Re-render auth form (updates title, buttons, toggle text)
-    if (typeof updateAuthUI === "function") updateAuthUI();
-
     // Re-render dynamic sections
     loadRefresh();
     if (isLoggedIn()) {
@@ -585,149 +519,24 @@
   }
 
   // =========================================
-  // Authentication (Sign Up / Log In)
+  // Authentication (Google Sign-In)
   // =========================================
 
-  var authMode = "login"; // "login", "signup", or "forgot"
-
-  // Map server error codes to translation keys
-  var ERROR_MAP = {
-    EMAIL_PASSWORD_REQUIRED: "errEmailPasswordRequired",
-    PASSWORD_TOO_SHORT: "errPasswordTooShort",
-    NAME_REQUIRED: "errNameRequired",
-    EMAIL_EXISTS: "errEmailExists",
-    USER_NOT_FOUND: "errUserNotFound",
-    WRONG_PASSWORD: "errWrongPassword",
-    SIGNUP_FAILED: "errGeneric",
-    INTERNAL_ERROR: "errGeneric",
-    INVALID_ACTION: "errGeneric",
-  };
+  // Google Client ID — set this to your Google Cloud OAuth 2.0 Client ID
+  var GOOGLE_CLIENT_ID = "406720545379-6mcjpa3558e848eannfdltd4d9dljtot.apps.googleusercontent.com";
 
   function showAuthError(msg) {
     var el = $("auth-error");
     el.textContent = msg;
     el.classList.remove("hidden");
-    $("auth-success").classList.add("hidden");
   }
 
-  function showAuthSuccess(msg) {
-    var el = $("auth-success");
-    el.textContent = msg;
-    el.classList.remove("hidden");
+  function hideAuthError() {
     $("auth-error").classList.add("hidden");
-  }
-
-  function hideAuthMessages() {
-    $("auth-error").classList.add("hidden");
-    $("auth-success").classList.add("hidden");
-  }
-
-  /** Update the login form UI to reflect current authMode */
-  function updateAuthUI() {
-    var isSignup = authMode === "signup";
-    var isForgot = authMode === "forgot";
-    var nameField = $("name-field");
-    var nameInput = $("login-name");
-    var confirmField = $("confirm-password-field");
-    var confirmInput = $("login-confirm-password");
-    var passwordField = $("login-password").parentElement;
-    var submitBtn = $("auth-submit-btn");
-    var title = $("auth-title");
-    var forgotLink = $("forgot-password-link");
-
-    if (isForgot) {
-      // Forgot password mode: show only email
-      nameField.classList.add("hidden");
-      nameInput.required = false;
-      confirmField.classList.add("hidden");
-      confirmInput.required = false;
-      passwordField.classList.add("hidden");
-      $("login-password").required = false;
-      forgotLink.classList.add("hidden");
-
-      title.setAttribute("data-i18n", "authForgotTitle");
-      title.textContent = t("authForgotTitle");
-      submitBtn.setAttribute("data-i18n", "authForgotBtn");
-      submitBtn.textContent = t("authForgotBtn");
-
-      $("auth-toggle-text").textContent = "";
-      $("auth-toggle-btn").setAttribute("data-i18n", "authBackToLogin");
-      $("auth-toggle-btn").textContent = t("authBackToLogin");
-    } else if (isSignup) {
-      nameField.classList.remove("hidden");
-      nameInput.required = true;
-      confirmField.classList.remove("hidden");
-      confirmInput.required = true;
-      passwordField.classList.remove("hidden");
-      $("login-password").required = true;
-      forgotLink.classList.add("hidden");
-
-      title.setAttribute("data-i18n", "authSignupTitle");
-      title.textContent = t("authSignupTitle");
-      submitBtn.setAttribute("data-i18n", "authSignupBtn");
-      submitBtn.textContent = t("authSignupBtn");
-      $("auth-toggle-text").setAttribute("data-i18n", "authToggleToLogin");
-      $("auth-toggle-text").textContent = t("authToggleToLogin");
-      $("auth-toggle-btn").setAttribute("data-i18n", "authToggleToLoginBtn");
-      $("auth-toggle-btn").textContent = t("authToggleToLoginBtn");
-    } else {
-      // Login mode
-      nameField.classList.add("hidden");
-      nameInput.required = false;
-      confirmField.classList.add("hidden");
-      confirmInput.required = false;
-      passwordField.classList.remove("hidden");
-      $("login-password").required = true;
-      forgotLink.classList.remove("hidden");
-
-      title.setAttribute("data-i18n", "authLoginTitle");
-      title.textContent = t("authLoginTitle");
-      submitBtn.setAttribute("data-i18n", "authLoginBtn");
-      submitBtn.textContent = t("authLoginBtn");
-      $("auth-toggle-text").setAttribute("data-i18n", "authToggleToSignup");
-      $("auth-toggle-text").textContent = t("authToggleToSignup");
-      $("auth-toggle-btn").setAttribute("data-i18n", "authToggleToSignupBtn");
-      $("auth-toggle-btn").textContent = t("authToggleToSignupBtn");
-    }
-    hideAuthMessages();
-  }
-
-  $("auth-toggle-btn").addEventListener("click", function () {
-    if (authMode === "forgot") {
-      authMode = "login";
-    } else {
-      authMode = authMode === "login" ? "signup" : "login";
-    }
-    updateAuthUI();
-  });
-
-  $("btn-forgot-password").addEventListener("click", function () {
-    authMode = "forgot";
-    updateAuthUI();
-  });
-
-  function apiAuth(action, payload) {
-    return fetch("/api/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(Object.assign({ action: action }, payload))
-    }).then(function (res) {
-      var ct = res.headers.get("content-type") || "";
-      if (!ct.includes("application/json")) {
-        throw { offline: true };
-      }
-      return res.json().then(function (data) {
-        if (!res.ok) {
-          var errKey = ERROR_MAP[data.error] || "errGeneric";
-          throw { serverError: true, message: t(errKey) };
-        }
-        return data;
-      });
-    });
   }
 
   function isLoggedIn() {
-    return !!localStorage.getItem(SK.userEmail) && !!localStorage.getItem(SK.userName);
+    return !!localStorage.getItem(SK.userEmail);
   }
 
   function showApp() {
@@ -742,103 +551,140 @@
   function showLogin() {
     $("login-overlay").classList.remove("hidden");
     $("app-shell").classList.add("hidden");
-    authMode = "login";
-    updateAuthUI();
+    hideAuthError();
   }
 
   function completeLogin(email, name) {
     localStorage.setItem(SK.userEmail, email);
     localStorage.setItem(SK.userName, name);
-    // Clear form
-    $("login-email").value = "";
-    $("login-password").value = "";
-    $("login-confirm-password").value = "";
-    $("login-name").value = "";
-    hideAuthMessages();
+    hideAuthError();
     showApp();
     initApp();
   }
 
-  $("login-form").addEventListener("submit", function (e) {
-    e.preventDefault();
-    hideAuthMessages();
+  /** Decode the JWT credential from Google to extract user info */
+  function decodeJwt(token) {
+    try {
+      var base64Url = token.split(".")[1];
+      var base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+      var json = decodeURIComponent(atob(base64).split("").map(function (c) {
+        return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+      }).join(""));
+      return JSON.parse(json);
+    } catch (e) {
+      return null;
+    }
+  }
 
-    var email = $("login-email").value.trim();
-    var password = $("login-password").value;
-    var confirmPw = $("login-confirm-password").value;
-    var name = $("login-name").value.trim();
-    var isSignup = authMode === "signup";
-    var isForgot = authMode === "forgot";
-
-    // --- Forgot password flow ---
-    if (isForgot) {
-      if (!email) {
-        showAuthError(t("errEmailPasswordRequired"));
-        return;
-      }
-      var btn = $("auth-submit-btn");
-      btn.textContent = t("authForgotLoading");
-      btn.disabled = true;
-
-      apiAuth("forgot", { email: email, password: "x" }).then(function () {
-        showAuthSuccess(t("forgotSuccess"));
-      }).catch(function (err) {
-        if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-          showAuthError(t("errGeneric"));
-        } else if (err.serverError) {
-          showAuthError(err.message);
-        } else {
-          showAuthError(t("errGeneric"));
-        }
-      }).finally(function () {
-        btn.textContent = t("authForgotBtn");
-        btn.disabled = false;
-      });
+  /** Handle the Google Sign-In credential response */
+  function handleGoogleCredential(response) {
+    var payload;
+    if (response._parsed) {
+      // From OAuth2 fallback flow
+      payload = response._parsed;
+    } else {
+      payload = decodeJwt(response.credential);
+    }
+    if (!payload || !payload.email) {
+      showAuthError(t("errGeneric"));
       return;
     }
 
-    // --- Login / Signup ---
-    if (!email || !password) {
-      showAuthError(t("errEmailPasswordRequired"));
-      return;
-    }
-    if (password.length < 6) {
-      showAuthError(t("errPasswordTooShort"));
-      return;
-    }
-    if (isSignup && !name) {
-      showAuthError(t("errNameRequired"));
-      return;
-    }
-    if (isSignup && password !== confirmPw) {
-      showAuthError(t("errPasswordMismatch"));
-      return;
-    }
+    var email = payload.email.toLowerCase();
+    var name = payload.name || "";
 
-    var btn = $("auth-submit-btn");
-    btn.textContent = isSignup ? t("authSignupLoading") : t("authLoginLoading");
+    // Immediately log the user in
+    completeLogin(email, name);
+
+    // Upsert to Airtable in the background (fire-and-forget)
+    fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "google", email: email, name: name })
+    }).catch(function (e) {
+      console.warn("Airtable upsert failed (non-blocking):", e);
+    });
+  }
+
+  /** Initialize Google Identity Services once the library loads */
+  function initGoogleSignIn() {
+    if (typeof google === "undefined" || !google.accounts) {
+      // GIS library not loaded yet — retry shortly
+      setTimeout(initGoogleSignIn, 200);
+      return;
+    }
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+  }
+
+  // Start polling for GIS library readiness
+  initGoogleSignIn();
+
+  // Google button click — trigger the One Tap / popup flow
+  $("btn-google-signin").addEventListener("click", function () {
+    hideAuthError();
+    var btn = $("btn-google-signin");
+    var label = btn.querySelector("span");
+    var origText = label.textContent;
+    label.textContent = t("googleSignInLoading");
     btn.disabled = true;
 
-    var payload = { email: email, password: password };
-    if (isSignup) payload.name = name;
+    if (typeof google !== "undefined" && google.accounts) {
+      google.accounts.id.prompt(function (notification) {
+        // Restore button in all cases
+        label.textContent = origText;
+        btn.disabled = false;
 
-    apiAuth(isSignup ? "signup" : "login", payload).then(function (data) {
-      completeLogin(data.email || email, data.name || name || "");
-    }).catch(function (err) {
-      if (err.serverError) {
-        showAuthError(err.message);
-      } else {
-        showAuthError(t("errGeneric"));
-      }
-    }).finally(function () {
-      btn.textContent = isSignup ? t("authSignupBtn") : t("authLoginBtn");
+        if (notification.isNotDisplayed()) {
+          // One Tap couldn't show (e.g. no Google session, popup blocked)
+          // Fall back to the standard popup sign-in
+          google.accounts.id.renderButton(
+            document.createElement("div"), // hidden placeholder
+            { type: "standard" }
+          );
+          // Try the explicit popup approach
+          google.accounts.oauth2.initTokenClient({
+            client_id: GOOGLE_CLIENT_ID,
+            scope: "email profile",
+            callback: function (tokenResponse) {
+              if (tokenResponse.access_token) {
+                fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+                  headers: { Authorization: "Bearer " + tokenResponse.access_token }
+                }).then(function (r) { return r.json(); }).then(function (info) {
+                  handleGoogleCredential({
+                    credential: null,
+                    _parsed: { email: info.email, name: info.name }
+                  });
+                }).catch(function () {
+                  showAuthError(t("errGeneric"));
+                });
+              }
+            },
+          }).requestAccessToken();
+        } else if (notification.isSkippedMoment()) {
+          // User dismissed or cancelled
+          showAuthError(t("errGoogleCancelled"));
+        }
+        // If notification.isDisplayed() — the callback will fire via handleGoogleCredential
+      });
+    } else {
+      label.textContent = origText;
       btn.disabled = false;
-    });
+      showAuthError(t("errGeneric"));
+    }
   });
 
   $("btn-logout").addEventListener("click", function () {
     localStorage.removeItem(SK.userEmail);
     localStorage.removeItem(SK.userName);
+    // Revoke Google session if available
+    if (typeof google !== "undefined" && google.accounts) {
+      google.accounts.id.disableAutoSelect();
+    }
     showLogin();
   });
 
@@ -1994,7 +1840,6 @@
     htmlEl.lang = currentLang;
     htmlEl.dir = currentLang === "he" ? "rtl" : "ltr";
     applyTranslations();
-    updateAuthUI();
   })();
 
   // Boot: check auth

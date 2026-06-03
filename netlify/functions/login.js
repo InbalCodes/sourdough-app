@@ -78,12 +78,19 @@ exports.handler = async function (event) {
   var password = body.password || "";
   var name = (body.name || "").trim();
 
-  if (!email || !password) {
-    return { statusCode: 400, body: JSON.stringify({ error: "EMAIL_PASSWORD_REQUIRED" }) };
+  // Google action only needs email
+  if (!email) {
+    return { statusCode: 400, body: JSON.stringify({ error: "EMAIL_REQUIRED" }) };
   }
 
-  if (password.length < 6) {
-    return { statusCode: 400, body: JSON.stringify({ error: "PASSWORD_TOO_SHORT" }) };
+  // Password validation only for login/signup (not google)
+  if (action !== "google") {
+    if (!password) {
+      return { statusCode: 400, body: JSON.stringify({ error: "EMAIL_PASSWORD_REQUIRED" }) };
+    }
+    if (password.length < 6) {
+      return { statusCode: 400, body: JSON.stringify({ error: "PASSWORD_TOO_SHORT" }) };
+    }
   }
 
   try {
@@ -168,6 +175,44 @@ exports.handler = async function (event) {
       return {
         statusCode: 200,
         body: JSON.stringify({ success: true, message: "RESET_SENT" })
+      };
+    }
+
+    // ========================
+    // GOOGLE — upsert user (no password needed)
+    // ========================
+    if (action === "google") {
+      if (existing) {
+        // Update name if changed
+        if (name && name !== (existing.fields.Name || "")) {
+          await fetch(airtableUrl(AIRTABLE_BASE, TABLE_NAME, existing.id), {
+            method: "PATCH",
+            headers: airtableHeaders(AIRTABLE_TOKEN),
+            body: JSON.stringify({ fields: { Name: name } })
+          });
+        }
+        return {
+          statusCode: 200,
+          body: JSON.stringify({ success: true, userId: existing.id, email: email, name: name })
+        };
+      }
+
+      // Create new user (no password)
+      var googleCreateRes = await fetch(airtableUrl(AIRTABLE_BASE, TABLE_NAME), {
+        method: "POST",
+        headers: airtableHeaders(AIRTABLE_TOKEN),
+        body: JSON.stringify({
+          fields: { Name: name, Email: email }
+        })
+      });
+      if (!googleCreateRes.ok) {
+        console.error("Airtable google create error:", await googleCreateRes.text());
+        return { statusCode: 502, body: JSON.stringify({ error: "SIGNUP_FAILED" }) };
+      }
+      var googleCreated = await googleCreateRes.json();
+      return {
+        statusCode: 200,
+        body: JSON.stringify({ success: true, userId: googleCreated.id, email: email, name: name })
       };
     }
 

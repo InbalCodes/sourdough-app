@@ -48,9 +48,10 @@
       forgotPasswordBtn: "שכחת סיסמה?",
       authForgotTitle: "איפוס סיסמה",
       authForgotBtn: "שלח הוראות איפוס",
-      authForgotLoading: "שולח...",
+      authForgotLoading: "בודק...",
       authBackToLogin: "חזור להתחברות",
-      forgotSuccess: "הוראות לאיפוס נשלחו למייל",
+      forgotSuccess: "המשתמש נמצא. שליחת מייל איפוס עדיין לא מוגדרת — צרו קשר עם התמיכה.",
+      forgotUserNotFound: "לא נמצא חשבון עם אימייל זה",
 
       // Auth errors
       errEmailPasswordRequired: "נא למלא אימייל וסיסמה",
@@ -81,7 +82,6 @@
 
       // Calculator
       calcTitle: "מחשבון האכלה לפני אפייה",
-      calcSubtitle: "נוסחת הסדנה",
       loafCountLabel: "כמות לחמים מתוכננת",
       breadWeightLabel: "משקל מחמצת לכל לחם (גרם)",
       breadWeightPlaceholder: "100",
@@ -177,6 +177,16 @@
       resetBakeBtn: "איפוס וסיום אפייה",
       resetBakeConfirm: "לאפס את כל מעקב האפייה ולהתחיל מחדש?",
 
+      // Chime notifications
+      chimeAutolyse: "🔔 הגיע הזמן לאוטוליזה!",
+      chimeBulk: "🔔 הגיע הזמן ללישה + באלק!",
+      chimeFold: "🔔 הגיע הזמן לקיפול!",
+      chimePreshape: "🔔 מנוחת עיצוב ראשוני הסתיימה!",
+      chimeOven: "🔔 חממו תנור ל-250 מעלות!",
+      chimeCold: "🔔 ההתפחה במקרר הסתיימה!",
+      chimeBakePhase1: "🔔 פאזה 1 הסתיימה! שנו טמפרטורה ופתחו סיר.",
+      chimeBakePhase2: "🔔 האפייה הסתיימה! 🎉",
+
       // Recipe Book
       tabRecipes: "ספר המתכונים",
       bpCalcTitle: "מחשבון אחוזי אופה",
@@ -202,7 +212,11 @@
       recipeSelectBtn: "בחר לאפייה",
       recipeLoadBtn: "טען למחשבון",
       recipeDeleteConfirm: "למחוק את המתכון?",
+      recipeDeleteFailed: "מחיקה נכשלה",
       recipeSelected: "המתכון נטען! עברו ללשונית מעקב אפייה.",
+      loading: "טוען…",
+      saving: "שומר…",
+      saveFailed: "השמירה נכשלה",
     },
 
     en: {
@@ -229,9 +243,10 @@
       forgotPasswordBtn: "Forgot password?",
       authForgotTitle: "Reset password",
       authForgotBtn: "Send reset instructions",
-      authForgotLoading: "Sending...",
+      authForgotLoading: "Checking...",
       authBackToLogin: "Back to log in",
-      forgotSuccess: "Reset instructions sent to your email",
+      forgotSuccess: "Account found. Email reset is not yet configured — please contact support.",
+      forgotUserNotFound: "No account found with this email",
 
       errEmailPasswordRequired: "Please enter email and password",
       errPasswordTooShort: "Password must be at least 6 characters",
@@ -257,7 +272,6 @@
       fedBtn: "I fed it!",
 
       calcTitle: "Pre-bake feed calculator",
-      calcSubtitle: "Workshop formula",
       loafCountLabel: "Planned loaf count",
       breadWeightLabel: "Starter per loaf (grams)",
       breadWeightPlaceholder: "100",
@@ -348,6 +362,15 @@
       resetBakeBtn: "Reset & finish bake",
       resetBakeConfirm: "Reset the entire bake tracker and start over?",
 
+      chimeAutolyse: "🔔 Time for autolyse!",
+      chimeBulk: "🔔 Time to mix + start bulk!",
+      chimeFold: "🔔 Time for a fold!",
+      chimePreshape: "🔔 Pre-shape rest is done!",
+      chimeOven: "🔔 Preheat oven to 250°C!",
+      chimeCold: "🔔 Cold retard is done!",
+      chimeBakePhase1: "🔔 Phase 1 done! Adjust temp & open pot.",
+      chimeBakePhase2: "🔔 Baking complete! 🎉",
+
       tabRecipes: "My Recipes",
       bpCalcTitle: "Baker's percentage calculator",
       bpCalcSubtitle: "Calculate weights from baker's percentages",
@@ -372,7 +395,11 @@
       recipeSelectBtn: "Select for baking",
       recipeLoadBtn: "Load into calculator",
       recipeDeleteConfirm: "Delete this recipe?",
+      recipeDeleteFailed: "Delete failed",
       recipeSelected: "Recipe loaded! Switch to the Bake tracker tab.",
+      loading: "Loading…",
+      saving: "Saving…",
+      saveFailed: "Save failed",
     }
   };
 
@@ -431,7 +458,9 @@
     loadRefresh();
     if (isLoggedIn()) {
       var name = localStorage.getItem(SK.userName) || "";
-      $("header-greeting").textContent = name ? t("greeting") + name : "";
+      var email = localStorage.getItem(SK.userEmail) || "";
+      var display = name || email.split("@")[0] || "";
+      $("header-greeting").textContent = display ? t("greeting") + display : "";
     }
 
     // Re-render bake workflow if active
@@ -515,11 +544,43 @@
   }
 
   var chimeFired = {};
+  var toastTimeout = null;
+
+  function showToast(msg) {
+    var el = $("toast");
+    el.textContent = msg;
+    el.classList.remove("hidden");
+    // Force reflow for transition
+    void el.offsetWidth;
+    el.classList.add("visible");
+    if (toastTimeout) clearTimeout(toastTimeout);
+    toastTimeout = setTimeout(function () {
+      el.classList.remove("visible");
+      setTimeout(function () { el.classList.add("hidden"); }, 300);
+    }, 5000);
+  }
+
+  /** Map chime keys to i18n notification keys */
+  var CHIME_MESSAGES = {
+    "autolyse": "chimeAutolyse",
+    "bulk": "chimeBulk",
+    "fold-fold-1": "chimeFold",
+    "fold-fold-2": "chimeFold",
+    "fold-fold-3": "chimeFold",
+    "fold-fold-4": "chimeFold",
+    "preshape-timer": "chimePreshape",
+    "oven": "chimeOven",
+    "cold-retard": "chimeCold",
+    "bake-phase1": "chimeBakePhase1",
+    "bake-phase2": "chimeBakePhase2",
+  };
 
   function checkChime(key, diff) {
     if (diff >= 0 && diff < 2000 && !chimeFired[key]) {
       chimeFired[key] = true;
       playChime();
+      var msgKey = CHIME_MESSAGES[key];
+      if (msgKey) showToast(t(msgKey));
     }
   }
 
@@ -666,14 +727,16 @@
   }
 
   function isLoggedIn() {
-    return !!localStorage.getItem(SK.userEmail) && !!localStorage.getItem(SK.userName);
+    return !!localStorage.getItem(SK.userEmail);
   }
 
   function showApp() {
     $("login-overlay").classList.add("hidden");
     $("app-shell").classList.remove("hidden");
     var name = localStorage.getItem(SK.userName) || "";
-    $("header-greeting").textContent = name ? t("greeting") + name : "";
+    var email = localStorage.getItem(SK.userEmail) || "";
+    var display = name || email.split("@")[0] || "";
+    $("header-greeting").textContent = display ? t("greeting") + display : "";
   }
 
   function showLogin() {
@@ -721,12 +784,11 @@
         showAuthSuccess(t("forgotSuccess"));
       }).catch(function (err) {
         if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-          // Offline: simulate success
-          showAuthSuccess(t("forgotSuccess"));
+          showAuthError(t("errGeneric"));
         } else if (err.serverError) {
           showAuthError(err.message);
         } else {
-          showAuthSuccess(t("forgotSuccess")); // Mock success
+          showAuthError(t("errGeneric"));
         }
       }).finally(function () {
         btn.textContent = t("authForgotBtn");
@@ -761,11 +823,9 @@
     if (isSignup) payload.name = name;
 
     apiAuth(isSignup ? "signup" : "login", payload).then(function (data) {
-      completeLogin(data.email || email, data.name || name);
+      completeLogin(data.email || email, data.name || name || "");
     }).catch(function (err) {
-      if (err.offline || err.message === "Failed to fetch" || err.name === "TypeError") {
-        completeLogin(email, name || email.split("@")[0]);
-      } else if (err.serverError) {
+      if (err.serverError) {
         showAuthError(err.message);
       } else {
         showAuthError(t("errGeneric"));
@@ -1650,7 +1710,7 @@
         if (phase === "1" && !chimeFired["bake-phase1"]) {
           chimeFired["bake-phase1"] = true;
           playChime();
-          alert(t("bakePhaseAlert"));
+          showToast(t("chimeBakePhase1"));
           // Auto-start phase 2
           var s = getBakeState();
           if (s && !s.bakePhase2Start) {
@@ -1702,21 +1762,81 @@
     inp.addEventListener("input", updateBPCalc);
   });
 
-  // --- Recipe persistence ---
+  // --- Recipe persistence (Airtable-backed) ---
 
-  function getRecipes() {
-    try { return JSON.parse(localStorage.getItem(SK.recipes)) || []; }
-    catch (e) { return []; }
+  // In-memory cache of recipes fetched from Airtable
+  var recipesCache = [];
+
+  function getUserEmail() {
+    return (localStorage.getItem(SK.userEmail) || "").trim().toLowerCase();
   }
 
-  function saveRecipes(arr) {
-    localStorage.setItem(SK.recipes, JSON.stringify(arr));
+  async function fetchRecipesFromServer() {
+    var email = getUserEmail();
+    if (!email) return [];
+    try {
+      var res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "list", userEmail: email })
+      });
+      var data = await res.json();
+      if (data.success && data.recipes) {
+        recipesCache = data.recipes;
+        return data.recipes;
+      }
+      return [];
+    } catch (e) {
+      console.error("Failed to fetch recipes:", e);
+      return [];
+    }
   }
 
-  function renderRecipes() {
-    var recipes = getRecipes();
+  async function saveRecipeToServer(recipe) {
+    var email = getUserEmail();
+    if (!email) return null;
+    try {
+      var res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "save", userEmail: email, recipe: recipe })
+      });
+      var data = await res.json();
+      if (data.success && data.recipe) {
+        return data.recipe;
+      }
+      return null;
+    } catch (e) {
+      console.error("Failed to save recipe:", e);
+      return null;
+    }
+  }
+
+  async function deleteRecipeFromServer(recordId) {
+    var email = getUserEmail();
+    if (!email) return false;
+    try {
+      var res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "delete", userEmail: email, recordId: recordId })
+      });
+      var data = await res.json();
+      return !!data.success;
+    } catch (e) {
+      console.error("Failed to delete recipe:", e);
+      return false;
+    }
+  }
+
+  async function renderRecipes() {
     var list = $("recipe-list");
     var noMsg = $("no-recipes-msg");
+
+    // Show loading state
+    list.innerHTML = '<div style="text-align:center;padding:1rem;opacity:0.6;">' + t("loading") + '</div>';
+
+    var recipes = await fetchRecipesFromServer();
 
     if (recipes.length === 0) {
       noMsg.classList.remove("hidden");
@@ -1726,10 +1846,10 @@
     noMsg.classList.add("hidden");
 
     list.innerHTML = recipes.map(function (r, i) {
-      return '<div class="recipe-card" data-idx="' + i + '">' +
+      return '<div class="recipe-card" data-id="' + escHtml(r.id) + '">' +
         '<div class="recipe-card-header">' +
           '<span class="recipe-card-name">' + escHtml(r.name) + '</span>' +
-          '<button class="recipe-delete-btn" data-idx="' + i + '" aria-label="delete">' +
+          '<button class="recipe-delete-btn" data-id="' + escHtml(r.id) + '" data-idx="' + i + '" aria-label="delete">' +
             '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' +
               '<polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>' +
             '</svg>' +
@@ -1750,20 +1870,24 @@
 
     // Wire delete buttons
     list.querySelectorAll(".recipe-delete-btn").forEach(function (btn) {
-      btn.addEventListener("click", function () {
+      btn.addEventListener("click", async function () {
         if (!confirm(t("recipeDeleteConfirm"))) return;
-        var idx = Number(btn.dataset.idx);
-        var arr = getRecipes();
-        arr.splice(idx, 1);
-        saveRecipes(arr);
-        renderRecipes();
+        var recordId = btn.dataset.id;
+        btn.disabled = true;
+        var ok = await deleteRecipeFromServer(recordId);
+        if (ok) {
+          await renderRecipes();
+        } else {
+          alert(t("recipeDeleteFailed") || "Delete failed");
+          btn.disabled = false;
+        }
       });
     });
 
     // Wire "load into calculator" buttons
     list.querySelectorAll(".recipe-load-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var r = getRecipes()[Number(btn.dataset.idx)];
+        var r = recipesCache[Number(btn.dataset.idx)];
         if (!r) return;
         bpName.value = r.name;
         bpFlour.value = r.flour;
@@ -1779,7 +1903,7 @@
     // Wire "select for baking" buttons
     list.querySelectorAll(".recipe-select-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
-        var r = getRecipes()[Number(btn.dataset.idx)];
+        var r = recipesCache[Number(btn.dataset.idx)];
         if (!r) return;
         // Calculate weights and store in bake-ready state
         var flour = r.flour;
@@ -1818,7 +1942,7 @@
   }
 
   // Save recipe button
-  $("btn-save-recipe").addEventListener("click", function () {
+  $("btn-save-recipe").addEventListener("click", async function () {
     var name = bpName.value.trim();
     if (!name) {
       alert(t("bpNameRequired"));
@@ -1831,16 +1955,19 @@
       salt: parseFloat(bpSalt.value) || 2,
       starter: parseFloat(bpStarter.value) || 20,
     };
-    var arr = getRecipes();
-    arr.push(recipe);
-    saveRecipes(arr);
-    renderRecipes();
 
-    // Button feedback
     var btn = $("btn-save-recipe");
     var origText = btn.textContent;
-    btn.textContent = t("bpSaved");
+    btn.textContent = t("saving") || "Saving...";
     btn.disabled = true;
+
+    var saved = await saveRecipeToServer(recipe);
+    if (saved) {
+      btn.textContent = t("bpSaved");
+      await renderRecipes();
+    } else {
+      btn.textContent = t("saveFailed") || "Save failed";
+    }
     setTimeout(function () {
       btn.textContent = origText;
       btn.disabled = false;

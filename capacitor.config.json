@@ -11,5 +11,12 @@
   },
   "android": {
     "allowMixedContent": false
+  },
+  "plugins": {
+  "GoogleAuth": {
+    "scopes": ["profile", "email"],
+    "clientId": "406720545379-6mcjpa3558e848eannfdltd4d9dljtot.apps.googleusercontent.com",
+    "androidClientId": "406720545379-j0aqab02khi9i36dq74iou2h5cf9imnt.apps.googleusercontent.com"
   }
+}
 }
