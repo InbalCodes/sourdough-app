@@ -615,7 +615,7 @@
       console.log("[Levain] appStateChange isActive:", state.isActive);
       if (state.isActive && currentPollToken) {
         console.log("[Levain] App resumed — force-checking auth result");
-        fetch(NETLIFY_ORIGIN + "/api/auth-result?token=" + encodeURIComponent(currentPollToken))
+        fetch(NETLIFY_ORIGIN + "/api/login?token=" + encodeURIComponent(currentPollToken))
           .then(function (res) { return res.json(); })
           .then(function (data) {
             console.log("[Levain] Force-check result:", JSON.stringify(data));
@@ -691,7 +691,7 @@
         return;
       }
 
-      fetch(NETLIFY_ORIGIN + "/api/auth-result?token=" + encodeURIComponent(token))
+      fetch(NETLIFY_ORIGIN + "/api/login?token=" + encodeURIComponent(token))
         .then(function (res) { return res.json(); })
         .then(function (data) {
           if (data.success && data.email) {

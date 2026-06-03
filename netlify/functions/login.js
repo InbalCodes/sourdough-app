@@ -56,9 +56,62 @@ async function findUserByEmail(base, token, table, email) {
 
 // --- Main handler ---
 
+function corsHeaders(event) {
+  var origin = (event.headers && (event.headers.origin || event.headers.Origin)) || "*";
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true"
+  };
+}
+
 exports.handler = async function (event) {
+  var CORS = corsHeaders(event);
+
+  // Handle CORS preflight
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 200, headers: CORS, body: "" };
+  }
+
+  // GET = auth-result polling
+  if (event.httpMethod === "GET") {
+    var pollToken = (event.queryStringParameters || {}).token;
+    if (!pollToken) {
+      return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "TOKEN_REQUIRED" }) };
+    }
+    var AT = process.env.AIRTABLE_TOKEN;
+    var AB = process.env.AIRTABLE_BASE_ID;
+    if (!AT || !AB) {
+      return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Server misconfigured" }) };
+    }
+    try {
+      var paUrl = airtableUrl(AB, "PendingAuth") +
+        "?filterByFormula=" + encodeURIComponent('{Token}="' + pollToken.replace(/"/g, '\\"') + '"') +
+        "&maxRecords=1";
+      var paRes = await fetch(paUrl, { headers: { Authorization: "Bearer " + AT } });
+      if (!paRes.ok) throw new Error("Airtable lookup failed");
+      var paData = await paRes.json();
+      if (!paData.records || paData.records.length === 0) {
+        return { statusCode: 200, headers: CORS, body: JSON.stringify({ pending: true }) };
+      }
+      var paRec = paData.records[0];
+      // Delete the record (one-time use)
+      fetch(airtableUrl(AB, "PendingAuth", paRec.id), {
+        method: "DELETE", headers: { Authorization: "Bearer " + AT }
+      }).catch(function () {});
+      return {
+        statusCode: 200, headers: CORS,
+        body: JSON.stringify({ success: true, email: paRec.fields.Email || "", name: paRec.fields.Name || "" })
+      };
+    } catch (err) {
+      console.error("Auth poll error:", err);
+      return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "INTERNAL_ERROR" }) };
+    }
+  }
+
   if (event.httpMethod !== "POST") {
-    return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+    return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
   var AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
