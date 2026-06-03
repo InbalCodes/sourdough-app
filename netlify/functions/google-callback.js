@@ -3,6 +3,28 @@
 
 var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
 
+/** Return an HTML page that redirects to a custom URL scheme via JS.
+ *  This works on modern Android where 302 redirects to custom schemes are blocked. */
+function nativeRedirectPage(deepLink) {
+  return {
+    statusCode: 200,
+    headers: { "Content-Type": "text/html; charset=utf-8" },
+    body: '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+      '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+      '<style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;' +
+      'justify-content:center;min-height:100vh;background:#FDFBF7;color:#2C3531;text-align:center;padding:24px}' +
+      '.card{max-width:320px}.title{font-size:2rem;font-weight:300;letter-spacing:.1em;margin-bottom:16px}' +
+      'p{font-size:.9rem;color:#6B7280;margin-bottom:24px}' +
+      'a{display:block;padding:14px 24px;background:#2C3531;color:#FDFBF7;border-radius:12px;' +
+      'text-decoration:none;font-weight:600;font-size:.95rem}</style></head>' +
+      '<body><div class="card"><div class="title">Levain</div>' +
+      '<p>Authentication complete</p>' +
+      '<a id="link" href="' + deepLink + '">Tap to return to Levain</a>' +
+      '<script>window.location.href="' + deepLink + '";</script>' +
+      '</div></body></html>'
+  };
+}
+
 exports.handler = async function (event) {
   var params = event.queryStringParameters || {};
   var code = params.code;
@@ -10,9 +32,10 @@ exports.handler = async function (event) {
   var error = params.error;
 
   if (error || !code) {
-    // User cancelled or error occurred — redirect back to login
-    var cancelUrl = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
-    return { statusCode: 302, headers: { Location: cancelUrl }, body: "" };
+    if (state === "native") {
+      return nativeRedirectPage("com.inbal.levain://callback/?google_auth=cancel");
+    }
+    return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/" }, body: "" };
   }
 
   var GOOGLE_CLIENT_ID = "406720545379-6mcjpa3558e848eannfdltd4d9dljtot.apps.googleusercontent.com";
@@ -39,8 +62,10 @@ exports.handler = async function (event) {
 
     if (!tokenRes.ok) {
       console.error("Token exchange failed:", await tokenRes.text());
-      var errUrl = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
-      return { statusCode: 302, headers: { Location: errUrl + "?google_auth=error" }, body: "" };
+      if (state === "native") {
+        return nativeRedirectPage("com.inbal.levain://callback/?google_auth=error");
+      }
+      return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
     }
 
     var tokens = await tokenRes.json();
@@ -52,8 +77,10 @@ exports.handler = async function (event) {
 
     if (!userRes.ok) {
       console.error("User info fetch failed:", await userRes.text());
-      var errUrl2 = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
-      return { statusCode: 302, headers: { Location: errUrl2 + "?google_auth=error" }, body: "" };
+      if (state === "native") {
+        return nativeRedirectPage("com.inbal.levain://callback/?google_auth=error");
+      }
+      return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
     }
 
     var userInfo = await userRes.json();
@@ -67,7 +94,6 @@ exports.handler = async function (event) {
         var baseUrl = "https://api.airtable.com/v0/" + AIRTABLE_BASE + "/" + encodeURIComponent(TABLE);
         var headers = { Authorization: "Bearer " + AIRTABLE_TOKEN, "Content-Type": "application/json" };
 
-        // Check if user exists
         var lookupUrl = baseUrl + "?filterByFormula=" +
           encodeURIComponent('{Email}="' + email.replace(/"/g, '\\"') + '"') + "&maxRecords=1";
         var lookupRes = await fetch(lookupUrl, { headers: { Authorization: "Bearer " + AIRTABLE_TOKEN } });
@@ -75,7 +101,6 @@ exports.handler = async function (event) {
         var existing = (lookupData.records && lookupData.records.length > 0) ? lookupData.records[0] : null;
 
         if (existing) {
-          // Update name if changed
           if (name && name !== (existing.fields.Name || "")) {
             await fetch(baseUrl + "/" + existing.id, {
               method: "PATCH", headers: headers,
@@ -83,7 +108,6 @@ exports.handler = async function (event) {
             });
           }
         } else {
-          // Create new user
           await fetch(baseUrl, {
             method: "POST", headers: headers,
             body: JSON.stringify({ fields: { Name: name, Email: email } })
@@ -94,17 +118,24 @@ exports.handler = async function (event) {
       }
     }
 
-    // 4. Redirect back to app with user info
-    var returnBase = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
-    var returnUrl = returnBase + "?google_auth=1" +
+    // 4. Redirect back to app
+    if (state === "native") {
+      var deepLink = "com.inbal.levain://callback/?google_auth=1" +
+        "&email=" + encodeURIComponent(email) +
+        "&name=" + encodeURIComponent(name);
+      return nativeRedirectPage(deepLink);
+    }
+
+    var returnUrl = NETLIFY_ORIGIN + "/?google_auth=1" +
       "&email=" + encodeURIComponent(email) +
       "&name=" + encodeURIComponent(name);
-
     return { statusCode: 302, headers: { Location: returnUrl }, body: "" };
 
   } catch (err) {
     console.error("Google callback error:", err);
-    var errUrl3 = state === "native" ? "com.inbal.levain://callback/" : NETLIFY_ORIGIN + "/";
-    return { statusCode: 302, headers: { Location: errUrl3 + "?google_auth=error" }, body: "" };
+    if (state === "native") {
+      return nativeRedirectPage("com.inbal.levain://callback/?google_auth=error");
+    }
+    return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
   }
 };
