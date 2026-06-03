@@ -7,14 +7,23 @@ function airtableUrl(base, table, recordId) {
   return url;
 }
 
+var CORS = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type"
+};
+
 exports.handler = async function (event) {
+  if (event.httpMethod === "OPTIONS") {
+    return { statusCode: 204, headers: CORS, body: "" };
+  }
   if (event.httpMethod !== "GET") {
-    return { statusCode: 405, body: JSON.stringify({ error: "Method not allowed" }) };
+    return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "Method not allowed" }) };
   }
 
   var token = (event.queryStringParameters || {}).token;
   if (!token) {
-    return { statusCode: 400, body: JSON.stringify({ error: "TOKEN_REQUIRED" }) };
+    return { statusCode: 400, headers: CORS, body: JSON.stringify({ error: "TOKEN_REQUIRED" }) };
   }
 
   var AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
@@ -22,7 +31,7 @@ exports.handler = async function (event) {
   var TABLE = "PendingAuth";
 
   if (!AIRTABLE_TOKEN || !AIRTABLE_BASE) {
-    return { statusCode: 500, body: JSON.stringify({ error: "Server misconfigured" }) };
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "Server misconfigured" }) };
   }
 
   try {
@@ -61,6 +70,6 @@ exports.handler = async function (event) {
 
   } catch (err) {
     console.error("Auth result error:", err);
-    return { statusCode: 500, body: JSON.stringify({ error: "INTERNAL_ERROR" }) };
+    return { statusCode: 500, headers: CORS, body: JSON.stringify({ error: "INTERNAL_ERROR" }) };
   }
 };
