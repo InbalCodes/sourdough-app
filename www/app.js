@@ -606,6 +606,33 @@
     console.log("[Levain] appUrlOpen listener registered");
   }
 
+  // Track the current polling token so we can force-check on resume
+  var currentPollToken = null;
+
+  // When app resumes from background (Custom Tab closed), immediately check poll
+  if (isNative && CapApp) {
+    CapApp.addListener("appStateChange", function (state) {
+      console.log("[Levain] appStateChange isActive:", state.isActive);
+      if (state.isActive && currentPollToken) {
+        console.log("[Levain] App resumed — force-checking auth result");
+        fetch(NETLIFY_ORIGIN + "/api/auth-result?token=" + encodeURIComponent(currentPollToken))
+          .then(function (res) { return res.json(); })
+          .then(function (data) {
+            console.log("[Levain] Force-check result:", JSON.stringify(data));
+            if (data.success && data.email) {
+              stopPolling();
+              currentPollToken = null;
+              if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
+              completeLogin(data.email, data.name || "");
+            }
+          })
+          .catch(function (err) {
+            console.error("[Levain] Force-check failed:", err);
+          });
+      }
+    });
+  }
+
   console.log("[Levain] isNative:", isNative, "CapBrowser:", !!CapBrowser, "CapApp:", !!CapApp);
 
   /**
@@ -706,8 +733,10 @@
         "&prompt=select_account" +
         "&access_type=online";
 
+      // Save token for resume-check
+      currentPollToken = token;
+
       // Open in Custom Chrome Tab (preferred — closeable, stays in-app)
-      // Fallback to system browser if plugin unavailable
       if (CapBrowser && typeof CapBrowser.open === "function") {
         console.log("[Levain] Opening OAuth via Browser.open (Custom Tab)");
         CapBrowser.open({ url: authUrl });
