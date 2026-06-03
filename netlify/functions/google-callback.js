@@ -3,9 +3,17 @@
 
 var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
 
-/** Return an HTML page that redirects to a custom URL scheme via JS.
- *  This works on modern Android where 302 redirects to custom schemes are blocked. */
-function nativeRedirectPage(deepLink) {
+/**
+ * Return an HTML page that opens the native app via an Android Intent URL.
+ * Intent URLs are the most reliable way to open an app from Chrome on modern Android.
+ * The custom scheme URL is used as fallback for the manual tap link.
+ */
+function nativeRedirectPage(queryString) {
+  // Android Intent URL — Chrome natively handles intent:// URIs
+  var intentUrl = "intent://callback/" + queryString +
+    "#Intent;scheme=com.inbal.levain;package=com.inbal.levain;end";
+  var customSchemeUrl = "com.inbal.levain://callback/" + queryString;
+
   return {
     statusCode: 200,
     headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -19,8 +27,8 @@ function nativeRedirectPage(deepLink) {
       'text-decoration:none;font-weight:600;font-size:.95rem}</style></head>' +
       '<body><div class="card"><div class="title">Levain</div>' +
       '<p>Authentication complete</p>' +
-      '<a id="link" href="' + deepLink + '">Tap to return to Levain</a>' +
-      '<script>window.location.href="' + deepLink + '";</script>' +
+      '<a href="' + customSchemeUrl + '">Tap to return to Levain</a>' +
+      '<script>window.location.href="' + intentUrl + '";</script>' +
       '</div></body></html>'
   };
 }
@@ -33,7 +41,7 @@ exports.handler = async function (event) {
 
   if (error || !code) {
     if (state === "native") {
-      return nativeRedirectPage("com.inbal.levain://callback/?google_auth=cancel");
+      return nativeRedirectPage("?google_auth=cancel");
     }
     return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/" }, body: "" };
   }
@@ -63,7 +71,7 @@ exports.handler = async function (event) {
     if (!tokenRes.ok) {
       console.error("Token exchange failed:", await tokenRes.text());
       if (state === "native") {
-        return nativeRedirectPage("com.inbal.levain://callback/?google_auth=error");
+        return nativeRedirectPage("?google_auth=error");
       }
       return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
     }
@@ -78,7 +86,7 @@ exports.handler = async function (event) {
     if (!userRes.ok) {
       console.error("User info fetch failed:", await userRes.text());
       if (state === "native") {
-        return nativeRedirectPage("com.inbal.levain://callback/?google_auth=error");
+        return nativeRedirectPage("?google_auth=error");
       }
       return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
     }
@@ -120,10 +128,9 @@ exports.handler = async function (event) {
 
     // 4. Redirect back to app
     if (state === "native") {
-      var deepLink = "com.inbal.levain://callback/?google_auth=1" +
-        "&email=" + encodeURIComponent(email) +
+      var qs = "?google_auth=1&email=" + encodeURIComponent(email) +
         "&name=" + encodeURIComponent(name);
-      return nativeRedirectPage(deepLink);
+      return nativeRedirectPage(qs);
     }
 
     var returnUrl = NETLIFY_ORIGIN + "/?google_auth=1" +
@@ -134,7 +141,7 @@ exports.handler = async function (event) {
   } catch (err) {
     console.error("Google callback error:", err);
     if (state === "native") {
-      return nativeRedirectPage("com.inbal.levain://callback/?google_auth=error");
+      return nativeRedirectPage("?google_auth=error");
     }
     return { statusCode: 302, headers: { Location: NETLIFY_ORIGIN + "/?google_auth=error" }, body: "" };
   }

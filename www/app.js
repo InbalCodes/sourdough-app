@@ -672,17 +672,9 @@
       "&access_type=online";
 
     if (isNative) {
-      // Try Browser plugin first, then fallback to window.open with _blank
-      var CapBrowser = (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) ||
-                       (window.Capacitor && window.Capacitor.registerPlugin && window.Capacitor.registerPlugin("Browser"));
-      if (CapBrowser && CapBrowser.open) {
-        console.log("[Levain] Opening OAuth via Capacitor Browser plugin");
-        CapBrowser.open({ url: authUrl, presentationStyle: "popover" });
-      } else {
-        // Fallback: open in system browser (never navigate WebView away)
-        console.log("[Levain] Opening OAuth via window.open _blank");
-        window.open(authUrl, "_blank");
-      }
+      // MUST open in system browser — never navigate the WebView away from localhost
+      console.log("[Levain] Opening OAuth in system browser");
+      window.open(authUrl, "_system");
     } else {
       // Web: navigate directly
       window.location.href = authUrl;
