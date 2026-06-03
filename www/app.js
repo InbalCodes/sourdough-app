@@ -775,8 +775,13 @@
 
   $("btn-logout").addEventListener("click", function () {
     stopPolling();
+    currentPollToken = null;
     localStorage.removeItem(SK.userEmail);
     localStorage.removeItem(SK.userName);
+    // Reset Google button state
+    var btn = $("btn-google-signin");
+    btn.querySelector("span").textContent = t("googleSignInBtn");
+    btn.disabled = false;
     showLogin();
   });
 
