@@ -15,7 +15,7 @@ exports.handler = async function (event) {
     return { statusCode: 302, headers: { Location: cancelUrl }, body: "" };
   }
 
-  var GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+  var GOOGLE_CLIENT_ID = "406720545379-6mcjpa3558e848eannfdltd4d9dljtot.apps.googleusercontent.com";
   var GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET;
   var AIRTABLE_TOKEN = process.env.AIRTABLE_TOKEN;
   var AIRTABLE_BASE = process.env.AIRTABLE_BASE_ID;
