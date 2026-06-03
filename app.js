@@ -36,7 +36,7 @@
 
       // Tabs
       tabStarter: "רענון ותחזוקה",
-      tabBake: "מעקב אפייה ולו״זים",
+      tabBake: "מעקב אפייה",
       subRoutine: "האכלה שוטפת",
       subCalc: "מחשבון לאפייה",
 
