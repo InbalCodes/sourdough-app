@@ -14,19 +14,25 @@ function airtableHeaders(token) {
   };
 }
 
-var CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type"
-};
+function corsHeaders(event) {
+  var origin = (event.headers && (event.headers.origin || event.headers.Origin)) || "*";
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true"
+  };
+}
 
+var _evt;
 function respond(statusCode, body) {
-  return { statusCode: statusCode, headers: CORS, body: JSON.stringify(body) };
+  return { statusCode: statusCode, headers: corsHeaders(_evt), body: JSON.stringify(body) };
 }
 
 exports.handler = async function (event) {
+  _evt = event;
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: CORS, body: "" };
+    return { statusCode: 200, headers: corsHeaders(event), body: "" };
   }
   if (event.httpMethod !== "POST") {
     return respond(405, { error: "Method not allowed" });

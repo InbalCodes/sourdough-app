@@ -128,8 +128,9 @@ exports.handler = async function (event) {
       }
     }
 
-    // 4a. Native flow: store result in PendingAuth table for polling
+    // 4a. Native flow: store in PendingAuth for polling + redirect via deep link
     if (isNativeFlow && authToken && AIRTABLE_TOKEN && AIRTABLE_BASE) {
+      // Store for polling fallback
       try {
         await fetch(airtableUrl(AIRTABLE_BASE, "PendingAuth"), {
           method: "POST",
@@ -141,7 +142,29 @@ exports.handler = async function (event) {
       } catch (e) {
         console.error("PendingAuth store failed:", e);
       }
-      return nativeDonePage(true);
+
+      // Try deep link redirect — if appUrlOpen listener catches it, great.
+      // If not, polling will pick it up.
+      var deepLink = "com.inbal.levain://callback/?google_auth=1" +
+        "&email=" + encodeURIComponent(email) +
+        "&name=" + encodeURIComponent(name);
+      return {
+        statusCode: 200,
+        headers: { "Content-Type": "text/html; charset=utf-8" },
+        body: '<!DOCTYPE html><html><head><meta charset="utf-8">' +
+          '<meta name="viewport" content="width=device-width,initial-scale=1">' +
+          '<style>body{font-family:-apple-system,sans-serif;display:flex;align-items:center;' +
+          'justify-content:center;min-height:100vh;background:#FDFBF7;color:#2C3531;text-align:center;padding:24px}' +
+          '.card{max-width:320px}.title{font-size:2rem;font-weight:300;letter-spacing:.1em;margin-bottom:16px}' +
+          'p{font-size:.95rem;color:#6B7280;line-height:1.6}' +
+          'a{display:block;margin-top:24px;padding:14px 24px;background:#2C3531;color:#FDFBF7;' +
+          'border-radius:12px;text-decoration:none;font-weight:600;font-size:.95rem}</style></head>' +
+          '<body><div class="card"><div class="title">Levain</div>' +
+          '<p>Authentication complete</p>' +
+          '<a href="' + deepLink + '">Tap to return to Levain</a></div>' +
+          '<script>window.location.href="' + deepLink + '";</script>' +
+          '</body></html>'
+      };
     }
 
     // 4b. Web flow: redirect back with params

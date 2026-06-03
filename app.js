@@ -570,14 +570,43 @@
 
   // Polling state for native auth
   var authPollTimer = null;
-  // Capacitor Browser plugin (for opening/closing Custom Chrome Tabs)
-  var CapBrowser = null;
-  if (isNative && window.Capacitor) {
-    CapBrowser = (window.Capacitor.Plugins && window.Capacitor.Plugins.Browser) || null;
-    if (!CapBrowser && window.Capacitor.registerPlugin) {
-      try { CapBrowser = window.Capacitor.registerPlugin("Browser"); } catch (e) {}
-    }
+
+  // Capacitor plugin references (vanilla JS / non-bundled access)
+  var Cap = window.Capacitor || null;
+  var CapPlugins = Cap && Cap.Plugins ? Cap.Plugins : {};
+  var CapBrowser = CapPlugins.Browser || (Cap && Cap.registerPlugin ? Cap.registerPlugin("Browser") : null);
+  var CapApp = CapPlugins.App || (Cap && Cap.registerPlugin ? Cap.registerPlugin("App") : null);
+
+  // Native: listen for deep link returns from OAuth
+  if (isNative && CapApp) {
+    CapApp.addListener("appUrlOpen", function (data) {
+      var url = data.url || "";
+      if (url.indexOf("com.inbal.levain://callback") !== 0) return;
+
+      // Close Custom Chrome Tab if open
+      if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
+
+      // Parse params and complete login
+      try {
+        var qIdx = url.indexOf("?");
+        if (qIdx === -1) return;
+        var params = {};
+        url.substring(qIdx + 1).split("&").forEach(function (part) {
+          var kv = part.split("=");
+          params[decodeURIComponent(kv[0])] = decodeURIComponent(kv[1] || "");
+        });
+        if (params.google_auth === "1" && params.email) {
+          stopPolling();
+          completeLogin(params.email, params.name || "");
+        }
+      } catch (e) {
+        console.error("[Levain] Deep link parse error:", e);
+      }
+    });
+    console.log("[Levain] appUrlOpen listener registered");
   }
+
+  console.log("[Levain] isNative:", isNative, "CapBrowser:", !!CapBrowser, "CapApp:", !!CapApp);
 
   /**
    * Check on boot if we're returning from the Google OAuth callback (web only).
@@ -677,10 +706,13 @@
         "&prompt=select_account" +
         "&access_type=online";
 
-      // Open in Custom Chrome Tab (closeable) or fallback to system browser
-      if (CapBrowser && CapBrowser.open) {
+      // Open in Custom Chrome Tab (preferred — closeable, stays in-app)
+      // Fallback to system browser if plugin unavailable
+      if (CapBrowser && typeof CapBrowser.open === "function") {
+        console.log("[Levain] Opening OAuth via Browser.open (Custom Tab)");
         CapBrowser.open({ url: authUrl });
       } else {
+        console.log("[Levain] Browser plugin unavailable, using window.open _system");
         window.open(authUrl, "_system");
       }
 

@@ -7,15 +7,20 @@ function airtableUrl(base, table, recordId) {
   return url;
 }
 
-var CORS = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Methods": "GET, OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type"
-};
+function corsHeaders(event) {
+  var origin = (event.headers && (event.headers.origin || event.headers.Origin)) || "*";
+  return {
+    "Access-Control-Allow-Origin": origin,
+    "Access-Control-Allow-Methods": "GET, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Credentials": "true"
+  };
+}
 
 exports.handler = async function (event) {
+  var CORS = corsHeaders(event);
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 204, headers: CORS, body: "" };
+    return { statusCode: 200, headers: CORS, body: "" };
   }
   if (event.httpMethod !== "GET") {
     return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: "Method not allowed" }) };
