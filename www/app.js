@@ -2101,8 +2101,10 @@
   var handlingRedirect = checkOAuthRedirect();
 
   // Boot: check auth
+  // Skip login screen on localhost (local dev)
+  var isLocalhost = window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   if (!handlingRedirect) {
-    if (isLoggedIn()) {
+    if (isLoggedIn() || isLocalhost) {
       showApp();
       initApp();
     } else {
