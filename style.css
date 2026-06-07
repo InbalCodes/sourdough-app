@@ -1550,17 +1550,71 @@ select:focus {
   z-index: 90;
   background: rgba(59, 47, 42, 0.4);
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: center;
+  padding: 24px;
 }
 
 .settings-overlay.hidden {
   display: none !important;
 }
 
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(59, 47, 42, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.confirm-box {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 28px 24px 20px;
+  max-width: 320px;
+  width: 100%;
+  box-shadow: 0 8px 32px rgba(59, 47, 42, 0.18);
+  text-align: center;
+}
+
+.confirm-box p {
+  font-size: 1rem;
+  color: var(--text);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+.confirm-btns {
+  display: flex;
+  gap: 10px;
+}
+
+.confirm-btns .btn {
+  flex: 1;
+  padding: 10px 0;
+  font-size: 0.92rem;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.confirm-btns .confirm-no {
+  background: var(--bg);
+  color: var(--text-secondary);
+  border: 1.5px solid var(--border);
+}
+
+.confirm-btns .confirm-yes {
+  background: var(--danger, #C65D4A);
+  color: #fff;
+  border: none;
+}
+
 .settings-panel {
   background: var(--surface);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-radius: var(--radius-lg);
   width: 100%;
   max-width: 480px;
   max-height: 80vh;
@@ -1756,14 +1810,122 @@ select:focus {
 
 .starter-detail-header {
   display: flex;
-  justify-content: space-between;
   align-items: flex-start;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 14px;
+  margin-bottom: 16px;
 }
 
-.starter-detail-header h2 {
+.starter-age-editable {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--border);
+  display: inline-block;
+}
+
+.starter-date-input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.btn-delete-starter {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.6;
+  transition: opacity 0.2s, color 0.2s;
+  margin-bottom: 8px;
+}
+.btn-delete-starter:hover,
+.btn-delete-starter:active {
+  opacity: 1;
+  color: var(--danger);
+}
+
+.starter-detail-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.starter-detail-info h2 {
   margin-bottom: 0;
+}
+
+.starter-photo-wrap {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  cursor: pointer;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.starter-photo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+  border-radius: 12px;
+}
+
+.starter-photo.has-photo {
+  display: block;
+}
+
+.starter-photo-placeholder {
+  width: 100%;
+  height: 100%;
+  background: var(--surface-alt);
+  border: 1.5px dashed var(--border);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  transition: border-color 0.2s;
+}
+
+.starter-photo.has-photo + .starter-photo-placeholder {
+  display: none;
+}
+
+.starter-photo-wrap:active .starter-photo-placeholder {
+  border-color: var(--accent-dark);
+}
+
+.starter-photo-file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  -webkit-user-select: none;
+}
+
+.starter-name-editable {
+  cursor: text;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  border-radius: 4px;
+  transition: background 0.15s;
+  outline: none;
+}
+
+.starter-name-editable:hover {
+  background: var(--surface-alt);
+}
+
+.starter-name-editable:focus {
+  background: var(--surface-alt);
+  outline: 2px solid var(--accent-dark);
+  outline-offset: 2px;
 }
 
 /* Dark mode disabled — light-only artisanal theme */

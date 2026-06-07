@@ -887,7 +887,6 @@
     $("setting-bake-alerts").checked = s.bakeAlerts !== false;
     $("setting-feed-reminder").checked = s.feedReminder !== false;
     $("settings-overlay").classList.remove("hidden");
-    renderSettingsStarterList();
   });
 
   $("btn-close-settings").addEventListener("click", function () {
@@ -1105,32 +1104,6 @@
     renderStarterCards();
     loadRefreshForActiveStarter();
   });
-
-  function renderSettingsStarterList() {
-    var starters = getStarters();
-    var container = $("settings-starter-list");
-    container.innerHTML = starters.map(function (s) {
-      return '<div class="settings-toggle-row">' +
-        '<span>' + escHtml(s.name) + ' — ' + calcStarterAge(s.creationDate) + '</span>' +
-        (starters.length > 1 ? '<button class="flour-row-remove" data-starter-id="' + s.id + '" type="button">&times;</button>' : '') +
-      '</div>';
-    }).join("");
-
-    container.querySelectorAll(".flour-row-remove").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (!confirm(t("deleteStarterConfirm"))) return;
-        var id = btn.dataset.starterId;
-        var arr = getStarters().filter(function (s) { return s.id !== id; });
-        saveStarters(arr);
-        if (getActiveStarterId() === id && arr.length > 0) {
-          setActiveStarterId(arr[0].id);
-        }
-        renderStarterCards();
-        loadRefreshForActiveStarter();
-        renderSettingsStarterList();
-      });
-    });
-  }
 
   // =========================================
   // Tabs

@@ -215,6 +215,8 @@
       recipeLoadBtn: "טען למחשבון",
       recipeDeleteConfirm: "למחוק את המתכון?",
       recipeDeleteFailed: "מחיקה נכשלה",
+      confirmYes: "כן",
+      confirmNo: "ביטול",
       recipeSelected: "המתכון נטען! עברו ללשונית מעקב אפייה.",
       loading: "טוען…",
       saving: "שומר…",
@@ -396,6 +398,8 @@
       recipeLoadBtn: "Load into calculator",
       recipeDeleteConfirm: "Delete this recipe?",
       recipeDeleteFailed: "Delete failed",
+      confirmYes: "Yes",
+      confirmNo: "Cancel",
       recipeSelected: "Recipe loaded! Switch to the Bake tracker tab.",
       loading: "Loading…",
       saving: "Saving…",
@@ -887,7 +891,6 @@
     $("setting-bake-alerts").checked = s.bakeAlerts !== false;
     $("setting-feed-reminder").checked = s.feedReminder !== false;
     $("settings-overlay").classList.remove("hidden");
-    renderSettingsStarterList();
   });
 
   $("btn-close-settings").addEventListener("click", function () {
@@ -1025,6 +1028,20 @@
       var badge = $("starter-status-badge");
       badge.textContent = statusLabel(status);
       badge.className = "starter-status-badge " + status;
+
+      // Photo
+      var photoEl = $("starter-photo");
+      if (active.photo) {
+        photoEl.src = active.photo;
+        photoEl.classList.add("has-photo");
+      } else {
+        photoEl.src = "";
+        photoEl.classList.remove("has-photo");
+      }
+
+      // Delete button — only show if more than 1 starter
+      var delBtn = $("btn-delete-starter");
+      delBtn.style.display = starters.length > 1 ? "" : "none";
     }
   }
 
@@ -1106,31 +1123,107 @@
     loadRefreshForActiveStarter();
   });
 
-  function renderSettingsStarterList() {
-    var starters = getStarters();
-    var container = $("settings-starter-list");
-    container.innerHTML = starters.map(function (s) {
-      return '<div class="settings-toggle-row">' +
-        '<span>' + escHtml(s.name) + ' — ' + calcStarterAge(s.creationDate) + '</span>' +
-        (starters.length > 1 ? '<button class="flour-row-remove" data-starter-id="' + s.id + '" type="button">&times;</button>' : '') +
-      '</div>';
-    }).join("");
+  // Tap starter name to edit
+  $("starter-detail-name").addEventListener("click", function () {
+    var nameEl = $("starter-detail-name");
+    if (nameEl.contentEditable === "true") return;
+    nameEl.contentEditable = "true";
+    nameEl.focus();
+    var range = document.createRange();
+    range.selectNodeContents(nameEl);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
 
-    container.querySelectorAll(".flour-row-remove").forEach(function (btn) {
-      btn.addEventListener("click", function () {
-        if (!confirm(t("deleteStarterConfirm"))) return;
-        var id = btn.dataset.starterId;
-        var arr = getStarters().filter(function (s) { return s.id !== id; });
-        saveStarters(arr);
-        if (getActiveStarterId() === id && arr.length > 0) {
-          setActiveStarterId(arr[0].id);
+    function saveName() {
+      nameEl.contentEditable = "false";
+      var newName = nameEl.textContent.trim();
+      if (newName) {
+        var arr = getStarters();
+        var activeId = getActiveStarterId();
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].id === activeId) { arr[i].name = newName; break; }
         }
+        saveStarters(arr);
         renderStarterCards();
-        loadRefreshForActiveStarter();
-        renderSettingsStarterList();
-      });
+      }
+      nameEl.removeEventListener("blur", saveName);
+      nameEl.removeEventListener("keydown", onKey);
+    }
+    function onKey(e) {
+      if (e.key === "Enter") { e.preventDefault(); nameEl.blur(); }
+    }
+    nameEl.addEventListener("blur", saveName);
+    nameEl.addEventListener("keydown", onKey);
+  });
+
+  // Tap starter age to change creation date
+  $("starter-detail-age").addEventListener("click", function () {
+    var active = getActiveStarter();
+    if (!active) return;
+    var dateInput = $("starter-date-input");
+    var d = new Date(active.creationDate);
+    dateInput.value = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    dateInput.max = new Date().toISOString().split("T")[0];
+    dateInput.showPicker ? dateInput.showPicker() : dateInput.click();
+  });
+
+  $("starter-date-input").addEventListener("change", function () {
+    var val = this.value;
+    if (!val) return;
+    var arr = getStarters();
+    var activeId = getActiveStarterId();
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].id === activeId) {
+        arr[i].creationDate = new Date(val + "T00:00:00").toISOString();
+        break;
+      }
+    }
+    saveStarters(arr);
+    renderStarterCards();
+  });
+
+  // Delete starter from detail card
+  $("btn-delete-starter").addEventListener("click", function () {
+    showConfirm(t("deleteStarterConfirm"), function () {
+      var id = getActiveStarterId();
+      var arr = getStarters().filter(function (s) { return s.id !== id; });
+      saveStarters(arr);
+      if (arr.length > 0) setActiveStarterId(arr[0].id);
+      renderStarterCards();
+      loadRefreshForActiveStarter();
     });
-  }
+  });
+
+  // Starter photo upload
+  $("starter-photo-input").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    // Resize and store as base64 data URL
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement("canvas");
+        var size = 200; // max dimension
+        var w = img.width, h = img.height;
+        if (w > h) { canvas.width = size; canvas.height = Math.round(h * size / w); }
+        else { canvas.height = size; canvas.width = Math.round(w * size / h); }
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
+        var arr = getStarters();
+        var activeId = getActiveStarterId();
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].id === activeId) { arr[i].photo = dataUrl; break; }
+        }
+        saveStarters(arr);
+        renderStarterCards();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // reset so same file can be re-selected
+  });
 
   // =========================================
   // Tabs
@@ -1467,7 +1560,7 @@
     resetBtn.className = "btn btn-ghost btn-large reset-bake-btn";
     resetBtn.textContent = t("resetBakeBtn");
     resetBtn.addEventListener("click", function () {
-      if (confirm(t("resetBakeConfirm"))) clearBake();
+      showConfirm(t("resetBakeConfirm"), clearBake);
     });
     resetLi.appendChild(resetBtn);
     el.appendChild(resetLi);
@@ -2298,17 +2391,18 @@
 
     // Wire delete buttons
     list.querySelectorAll(".recipe-delete-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        if (!confirm(t("recipeDeleteConfirm"))) return;
-        var recordId = btn.dataset.id;
-        btn.disabled = true;
-        var ok = await deleteRecipeFromServer(recordId);
-        if (ok) {
-          await renderRecipes();
-        } else {
-          alert(t("recipeDeleteFailed") || "Delete failed");
-          btn.disabled = false;
-        }
+      btn.addEventListener("click", function () {
+        showConfirm(t("recipeDeleteConfirm"), async function () {
+          var recordId = btn.dataset.id;
+          btn.disabled = true;
+          var ok = await deleteRecipeFromServer(recordId);
+          if (ok) {
+            await renderRecipes();
+          } else {
+            alert(t("recipeDeleteFailed") || "Delete failed");
+            btn.disabled = false;
+          }
+        });
       });
     });
 
@@ -2367,6 +2461,28 @@
     var d = document.createElement("div");
     d.textContent = str;
     return d.innerHTML;
+  }
+
+  function showConfirm(msg, onYes) {
+    var overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+    overlay.innerHTML = '<div class="confirm-box">' +
+      '<p>' + escHtml(msg) + '</p>' +
+      '<div class="confirm-btns">' +
+        '<button class="btn btn-primary confirm-yes">' + t("confirmYes") + '</button>' +
+        '<button class="btn confirm-no">' + t("confirmNo") + '</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector(".confirm-yes").addEventListener("click", function () {
+      document.body.removeChild(overlay);
+      onYes();
+    });
+    overlay.querySelector(".confirm-no").addEventListener("click", function () {
+      document.body.removeChild(overlay);
+    });
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) document.body.removeChild(overlay);
+    });
   }
 
   // Save recipe button
