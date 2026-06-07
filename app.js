@@ -2581,7 +2581,7 @@
     // Include flour types if multi-flour is active
     if (flourSplitActive && flourTypes.length > 0) {
       recipe.flourTypes = flourTypes.map(function (f) {
-        return { name: f.name, grams: f.grams };
+        return { name: f.name, grams: f.grams, pct: f.pct };
       });
     }
 

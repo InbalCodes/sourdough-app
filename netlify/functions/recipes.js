@@ -96,26 +96,35 @@ exports.handler = async function (event) {
         return respond(400, { error: "RECIPE_NAME_REQUIRED" });
       }
 
+      var fields = {
+        Name: recipe.name,
+        Flour: recipe.flour || 500,
+        Hydration: recipe.hydration || 70,
+        Salt: recipe.salt || 2,
+        Starter: recipe.starter || 20,
+        UserEmail: userEmail,
+      };
+      if (recipe.flourTypes && recipe.flourTypes.length > 0) {
+        fields.FlourTypes = JSON.stringify(recipe.flourTypes);
+      }
+
       var createRes = await fetch(airtableUrl(AIRTABLE_BASE, TABLE_NAME), {
         method: "POST",
         headers: airtableHeaders(AIRTABLE_TOKEN),
-        body: JSON.stringify({
-          fields: (function () {
-            var f = {
-              Name: recipe.name,
-              Flour: recipe.flour || 500,
-              Hydration: recipe.hydration || 70,
-              Salt: recipe.salt || 2,
-              Starter: recipe.starter || 20,
-              UserEmail: userEmail,
-            };
-            if (recipe.flourTypes && recipe.flourTypes.length > 0) {
-              f.FlourTypes = JSON.stringify(recipe.flourTypes);
-            }
-            return f;
-          })()
-        })
+        body: JSON.stringify({ fields: fields })
       });
+
+      // If save failed and we included FlourTypes, retry without it
+      // (field may not exist in Airtable yet)
+      if (!createRes.ok && fields.FlourTypes) {
+        console.warn("Save with FlourTypes failed, retrying without it");
+        delete fields.FlourTypes;
+        createRes = await fetch(airtableUrl(AIRTABLE_BASE, TABLE_NAME), {
+          method: "POST",
+          headers: airtableHeaders(AIRTABLE_TOKEN),
+          body: JSON.stringify({ fields: fields })
+        });
+      }
 
       if (!createRes.ok) {
         console.error("Airtable create error:", await createRes.text());
