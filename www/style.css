@@ -180,14 +180,14 @@ input, select, textarea {
 }
 
 .login-credit a,
-.header-credit a {
+.footer-credit a {
   color: inherit;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 
 .login-credit a:hover,
-.header-credit a:hover {
+.footer-credit a:hover {
   color: var(--accent-dark);
 }
 
@@ -244,10 +244,19 @@ input, select, textarea {
   font-weight: 400;
 }
 
-.header-credit {
+.app-footer {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 10px 20px;
+  padding-bottom: calc(env(safe-area-inset-bottom, 8px) + 8px);
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+}
+
+.footer-credit {
   font-size: 0.65rem;
   color: var(--text-tertiary);
-  margin-top: 4px;
+  margin: 0;
   letter-spacing: 0.02em;
 }
 
