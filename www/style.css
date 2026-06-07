@@ -41,11 +41,31 @@
 
   --font-serif: 'Georgia', 'Playfair Display', 'Times New Roman', serif;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif;
+  --font-hebrew: 'Heebo', 'Rubik', 'Assistant', 'Noto Sans Hebrew', -apple-system, system-ui, sans-serif;
+  --font-hebrew-serif: 'Frank Ruhl Libre', 'David Libre', 'Noto Serif Hebrew', Georgia, serif;
+
+  color-scheme: light only;
 }
 
 html {
   font-size: 16px;
   -webkit-tap-highlight-color: transparent;
+}
+
+html[lang="he"] body,
+html[lang="he"] input,
+html[lang="he"] select,
+html[lang="he"] textarea,
+html[lang="he"] button {
+  font-family: var(--font-hebrew);
+}
+
+html[lang="he"] .brand-title,
+html[lang="he"] .header-title,
+html[lang="he"] .card h2,
+html[lang="he"] .step-name,
+html[lang="he"] .bp-result-card h3 {
+  font-family: var(--font-hebrew-serif);
 }
 
 body {
@@ -1501,45 +1521,4 @@ select:focus {
    Dark Mode
    ========================================= */
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #1C1915;
-    --surface: #262220;
-    --surface-alt: #302B27;
-    --border: #3E3832;
-    --border-light: #352F2A;
-
-    --text: #EAE5DF;
-    --text-secondary: #A69D94;
-    --text-tertiary: #7A6E65;
-
-    --accent: #2D4A35;
-    --accent-dark: #7BA393;
-    --accent-text: #A8D4B8;
-
-    --wheat: #C1896B;
-    --wheat-dark: #D4A07D;
-    --wheat-bg: #332D22;
-    --danger-bg: #3D2A22;
-    --oven-bg: #3D3020;
-  }
-
-  .login-overlay {
-    background: var(--bg);
-  }
-
-  .btn-google {
-    background: var(--surface);
-    border-color: var(--border);
-    color: var(--text);
-  }
-
-  .lifestyle-icon {
-    background: var(--surface-alt);
-  }
-
-  .recipe-select-btn {
-    background: var(--accent);
-    border-color: var(--accent-dark);
-  }
-}
+/* Dark mode disabled — light-only artisanal theme */
