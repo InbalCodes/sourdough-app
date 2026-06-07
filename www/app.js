@@ -1044,12 +1044,10 @@
   }
 
   $("btn-add-starter").addEventListener("click", function () {
-    var name = prompt(t("flourTypeName"), t("newStarterName"));
-    if (!name) return;
     var starters = getStarters();
     var newStarter = {
       id: "starter_" + Date.now(),
-      name: name.trim(),
+      name: t("newStarterName") + " " + (starters.length + 1),
       creationDate: new Date().toISOString(),
       status: "active",
       lastFed: null,
@@ -1059,6 +1057,35 @@
     setActiveStarterId(newStarter.id);
     renderStarterCards();
     loadRefreshForActiveStarter();
+    // Let user rename immediately via the detail card name
+    var nameEl = $("starter-detail-name");
+    nameEl.contentEditable = "true";
+    nameEl.focus();
+    // Select all text
+    var range = document.createRange();
+    range.selectNodeContents(nameEl);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+    // Save on blur or Enter
+    function saveName() {
+      nameEl.contentEditable = "false";
+      var newName = nameEl.textContent.trim();
+      if (newName) {
+        var arr = getStarters();
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].id === newStarter.id) { arr[i].name = newName; break; }
+        }
+        saveStarters(arr);
+        renderStarterCards();
+      }
+      nameEl.removeEventListener("blur", saveName);
+      nameEl.removeEventListener("keydown", onKey);
+    }
+    function onKey(e) {
+      if (e.key === "Enter") { e.preventDefault(); nameEl.blur(); }
+    }
+    nameEl.addEventListener("blur", saveName);
+    nameEl.addEventListener("keydown", onKey);
   });
 
   // Override the fed button to work with active starter
