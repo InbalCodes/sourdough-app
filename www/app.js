@@ -16,6 +16,9 @@
     calcBreadWeight: "levain_calc_bread_weight",
     bakeState: "levain_bake_state",
     recipes: "levain_recipes",
+    starters: "levain_starters",
+    activeStarter: "levain_active_starter",
+    settings: "levain_settings",
   };
 
   // =========================================
@@ -182,6 +185,30 @@
       flourTotalLabel: "סה״כ קמח",
       flourBread: "קמח לחם",
       completedIn: "הושלם תוך",
+
+      // Starters
+      btnAddStarter: "+ הוסף מחמצת",
+      newStarterName: "מחמצת חדשה",
+      starterAge: "{m} חודשים",
+      starterAgeYears: "{y} שנים",
+      statusActive: "פעילה",
+      statusResting: "במקרר",
+      statusNeedsFeeding: "דורשת האכלה",
+      deleteStarter: "מחק מחמצת",
+      deleteStarterConfirm: "למחוק מחמצת זו?",
+
+      // Settings
+      settingsTitle: "הגדרות",
+      settingsUnits: "יחידות מידה",
+      settingsMetric: "מטרי (גרם)",
+      settingsImperial: "אימפריאלי (אונקיות)",
+      settingsNotifications: "התראות",
+      settingsBakeAlerts: "התראות שלבי אפייה",
+      settingsFeedReminder: "תזכורת האכלה",
+      settingsStarterMgmt: "ניהול מחמצות",
+      unitGrams: "גרם",
+      unitOz: "oz",
+
       recipesTitle: "המתכונים השמורים שלי",
       noRecipes: "טרם נשמרו מתכונים",
       recipeSelectBtn: "בחר לאפייה",
@@ -341,6 +368,28 @@
       flourTotalLabel: "Total flour",
       flourBread: "Bread flour",
       completedIn: "Completed in",
+
+      btnAddStarter: "+ Add starter",
+      newStarterName: "New starter",
+      starterAge: "{m} months",
+      starterAgeYears: "{y} years",
+      statusActive: "Active",
+      statusResting: "Fridge resting",
+      statusNeedsFeeding: "Needs feeding",
+      deleteStarter: "Delete starter",
+      deleteStarterConfirm: "Delete this starter?",
+
+      settingsTitle: "Settings",
+      settingsUnits: "Measurement units",
+      settingsMetric: "Metric (grams)",
+      settingsImperial: "Imperial (ounces)",
+      settingsNotifications: "Notifications",
+      settingsBakeAlerts: "Bake stage alerts",
+      settingsFeedReminder: "Feed reminder",
+      settingsStarterMgmt: "Starter management",
+      unitGrams: "grams",
+      unitOz: "oz",
+
       recipesTitle: "My saved recipes",
       noRecipes: "No recipes saved yet",
       recipeSelectBtn: "Select for baking",
@@ -804,6 +853,259 @@
   $("app-lang-toggle").addEventListener("click", toggleLanguage);
 
   // =========================================
+  // User Settings
+  // =========================================
+
+  var GRAMS_PER_OZ = 28.3495;
+
+  function getSettings() {
+    try { return JSON.parse(localStorage.getItem(SK.settings)) || {}; }
+    catch (e) { return {}; }
+  }
+
+  function saveSettings(s) {
+    localStorage.setItem(SK.settings, JSON.stringify(s));
+  }
+
+  function isImperial() {
+    return !!getSettings().imperial;
+  }
+
+  function convertWeight(grams) {
+    if (!isImperial()) return grams;
+    return roundTo(grams / GRAMS_PER_OZ);
+  }
+
+  function weightUnit() {
+    return isImperial() ? t("unitOz") : t("unitGrams");
+  }
+
+  // Settings panel
+  $("btn-settings").addEventListener("click", function () {
+    var s = getSettings();
+    $("setting-imperial").checked = !!s.imperial;
+    $("setting-bake-alerts").checked = s.bakeAlerts !== false;
+    $("setting-feed-reminder").checked = s.feedReminder !== false;
+    $("settings-overlay").classList.remove("hidden");
+    renderSettingsStarterList();
+  });
+
+  $("btn-close-settings").addEventListener("click", function () {
+    $("settings-overlay").classList.add("hidden");
+  });
+
+  $("settings-overlay").addEventListener("click", function (e) {
+    if (e.target === $("settings-overlay")) $("settings-overlay").classList.add("hidden");
+  });
+
+  $("setting-imperial").addEventListener("change", function () {
+    var s = getSettings();
+    s.imperial = this.checked;
+    saveSettings(s);
+    updateCalc();
+    updateBPCalc();
+  });
+
+  $("setting-bake-alerts").addEventListener("change", function () {
+    var s = getSettings();
+    s.bakeAlerts = this.checked;
+    saveSettings(s);
+  });
+
+  $("setting-feed-reminder").addEventListener("change", function () {
+    var s = getSettings();
+    s.feedReminder = this.checked;
+    saveSettings(s);
+  });
+
+  // =========================================
+  // Multi-Starter Management
+  // =========================================
+
+  function getStarters() {
+    try { return JSON.parse(localStorage.getItem(SK.starters)) || []; }
+    catch (e) { return []; }
+  }
+
+  function saveStarters(arr) {
+    localStorage.setItem(SK.starters, JSON.stringify(arr));
+  }
+
+  function getActiveStarterId() {
+    return localStorage.getItem(SK.activeStarter) || null;
+  }
+
+  function setActiveStarterId(id) {
+    localStorage.setItem(SK.activeStarter, id);
+  }
+
+  function getActiveStarter() {
+    var starters = getStarters();
+    var id = getActiveStarterId();
+    if (!id && starters.length > 0) {
+      id = starters[0].id;
+      setActiveStarterId(id);
+    }
+    for (var i = 0; i < starters.length; i++) {
+      if (starters[i].id === id) return starters[i];
+    }
+    return null;
+  }
+
+  function ensureDefaultStarter() {
+    var starters = getStarters();
+    if (starters.length === 0) {
+      var defaultStarter = {
+        id: "starter_" + Date.now(),
+        name: t("newStarterName"),
+        creationDate: new Date().toISOString(),
+        status: "active",
+        lastFed: localStorage.getItem(SK.lastFed) || null,
+      };
+      starters.push(defaultStarter);
+      saveStarters(starters);
+      setActiveStarterId(defaultStarter.id);
+    }
+  }
+
+  function calcStarterAge(creationDate) {
+    var created = new Date(creationDate);
+    var now = new Date();
+    var months = (now.getFullYear() - created.getFullYear()) * 12 + (now.getMonth() - created.getMonth());
+    if (months >= 12) {
+      var years = Math.floor(months / 12);
+      return t("starterAgeYears").replace("{y}", years);
+    }
+    return t("starterAge").replace("{m}", Math.max(1, months));
+  }
+
+  function getStarterStatus(starter) {
+    if (!starter.lastFed) return "needs-feeding";
+    var elapsed = Date.now() - new Date(starter.lastFed).getTime();
+    var days = elapsed / 86400000;
+    if (days > 4) return "needs-feeding";
+    return starter.status || "active";
+  }
+
+  function statusLabel(status) {
+    if (status === "active") return t("statusActive");
+    if (status === "resting") return t("statusResting");
+    return t("statusNeedsFeeding");
+  }
+
+  function renderStarterCards() {
+    ensureDefaultStarter();
+    var starters = getStarters();
+    var activeId = getActiveStarterId();
+    var container = $("starter-cards");
+
+    container.innerHTML = starters.map(function (s) {
+      var status = getStarterStatus(s);
+      var isActive = s.id === activeId;
+      return '<div class="starter-card' + (isActive ? ' active' : '') + '" data-id="' + s.id + '">' +
+        '<div class="starter-card-name">' + escHtml(s.name) + '</div>' +
+        '<div class="starter-card-age">' + calcStarterAge(s.creationDate) + '</div>' +
+      '</div>';
+    }).join("");
+
+    container.querySelectorAll(".starter-card").forEach(function (card) {
+      card.addEventListener("click", function () {
+        setActiveStarterId(card.dataset.id);
+        renderStarterCards();
+        loadRefreshForActiveStarter();
+      });
+    });
+
+    // Update detail card
+    var active = getActiveStarter();
+    if (active) {
+      var status = getStarterStatus(active);
+      $("starter-detail-name").textContent = active.name;
+      $("starter-detail-age").textContent = calcStarterAge(active.creationDate);
+      var badge = $("starter-status-badge");
+      badge.textContent = statusLabel(status);
+      badge.className = "starter-status-badge " + status;
+    }
+  }
+
+  function loadRefreshForActiveStarter() {
+    var active = getActiveStarter();
+    if (!active) { loadRefresh(); return; }
+    // Update SK.lastFed to point to the active starter's lastFed
+    var elTime = $("last-refresh-time");
+    var elTimer = $("refresh-timer");
+    if (!active.lastFed) {
+      elTime.textContent = t("noFeedYet");
+      elTimer.textContent = "";
+      return;
+    }
+    elTime.textContent = t("lastFeedAt") + formatDate(new Date(active.lastFed));
+    // Timer update handled by interval
+  }
+
+  $("btn-add-starter").addEventListener("click", function () {
+    var name = prompt(t("flourTypeName"), t("newStarterName"));
+    if (!name) return;
+    var starters = getStarters();
+    var newStarter = {
+      id: "starter_" + Date.now(),
+      name: name.trim(),
+      creationDate: new Date().toISOString(),
+      status: "active",
+      lastFed: null,
+    };
+    starters.push(newStarter);
+    saveStarters(starters);
+    setActiveStarterId(newStarter.id);
+    renderStarterCards();
+    loadRefreshForActiveStarter();
+  });
+
+  // Override the fed button to work with active starter
+  $("btn-refreshed").addEventListener("click", function () {
+    var starters = getStarters();
+    var activeId = getActiveStarterId();
+    var now = new Date().toISOString();
+    for (var i = 0; i < starters.length; i++) {
+      if (starters[i].id === activeId) {
+        starters[i].lastFed = now;
+        starters[i].status = "active";
+        break;
+      }
+    }
+    saveStarters(starters);
+    localStorage.setItem(SK.lastFed, now); // backward compat
+    renderStarterCards();
+    loadRefreshForActiveStarter();
+  });
+
+  function renderSettingsStarterList() {
+    var starters = getStarters();
+    var container = $("settings-starter-list");
+    container.innerHTML = starters.map(function (s) {
+      return '<div class="settings-toggle-row">' +
+        '<span>' + escHtml(s.name) + ' — ' + calcStarterAge(s.creationDate) + '</span>' +
+        (starters.length > 1 ? '<button class="flour-row-remove" data-starter-id="' + s.id + '" type="button">&times;</button>' : '') +
+      '</div>';
+    }).join("");
+
+    container.querySelectorAll(".flour-row-remove").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        if (!confirm(t("deleteStarterConfirm"))) return;
+        var id = btn.dataset.starterId;
+        var arr = getStarters().filter(function (s) { return s.id !== id; });
+        saveStarters(arr);
+        if (getActiveStarterId() === id && arr.length > 0) {
+          setActiveStarterId(arr[0].id);
+        }
+        renderStarterCards();
+        loadRefreshForActiveStarter();
+        renderSettingsStarterList();
+      });
+    });
+  }
+
+  // =========================================
   // Tabs
   // =========================================
 
@@ -857,16 +1159,14 @@
   }
 
   function updateRefreshTimer() {
-    var iso = localStorage.getItem(SK.lastFed);
+    var active = getActiveStarter();
+    var iso = active ? active.lastFed : localStorage.getItem(SK.lastFed);
     if (!iso) return;
     var elapsed = Date.now() - new Date(iso).getTime();
     $("refresh-timer").textContent = t("elapsed") + formatDuration(elapsed);
   }
 
-  $("btn-refreshed").addEventListener("click", function () {
-    localStorage.setItem(SK.lastFed, new Date().toISOString());
-    loadRefresh();
-  });
+  // btn-refreshed handler is in Multi-Starter Management section above
 
   // =========================================
   // TAB 1 — Section 2: Calculator
@@ -2083,7 +2383,8 @@
     restoreCalcPrefs();
     targetInput.value = defaultTarget();
     updateCalc();
-    loadRefresh();
+    renderStarterCards();
+    loadRefreshForActiveStarter();
     renderBakeUI();
     updateBPCalc();
     renderRecipes();
