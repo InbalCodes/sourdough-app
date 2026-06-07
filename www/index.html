@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="he" dir="rtl">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
@@ -14,6 +15,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
   <!-- ======================== -->
@@ -28,15 +30,24 @@
       </div>
       <button id="btn-google-signin" class="btn-google" type="button">
         <svg class="google-logo" viewBox="0 0 24 24" width="20" height="20">
-          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/>
-          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          <path
+            d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+            fill="#4285F4" />
+          <path
+            d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            fill="#34A853" />
+          <path
+            d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z"
+            fill="#FBBC05" />
+          <path
+            d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            fill="#EA4335" />
         </svg>
         <span data-i18n="googleSignInBtn">התחברות באמצעות Google</span>
       </button>
       <p id="auth-error" class="auth-error hidden"></p>
-      <p class="login-credit">Developed by Inbal Sertshuk | <a href="https://inbal.solutions" target="_blank" rel="noopener">inbal.solutions</a></p>
+      <p class="login-credit">Developed by Inbal Sertshuk | <a href="https://inbal.solutions" target="_blank"
+          rel="noopener">inbal.solutions</a></p>
     </div>
   </div>
 
@@ -56,7 +67,9 @@
           <button id="btn-settings" class="settings-btn" aria-label="settings" type="button">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
-              <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              <circle cx="12" cy="12" r="3" />
+              <path
+                d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
             </svg>
           </button>
           <button id="btn-logout" class="logout-btn" aria-label="logout">
@@ -69,13 +82,16 @@
           </button>
         </div>
       </div>
-      <p class="header-credit">Developed by Inbal Sertshuk | <a href="https://inbal.solutions" target="_blank" rel="noopener">inbal.solutions</a></p>
+      <p class="header-credit">Developed by Inbal Sertshuk | <a href="https://inbal.solutions" target="_blank"
+          rel="noopener">inbal.solutions</a></p>
     </header>
 
     <nav class="tab-bar" role="tablist">
-      <button class="tab active" role="tab" aria-selected="true" data-tab="starter" data-i18n="tabStarter">רענון ותחזוקה</button>
+      <button class="tab active" role="tab" aria-selected="true" data-tab="starter" data-i18n="tabStarter">רענון
+        ותחזוקה</button>
       <button class="tab" role="tab" aria-selected="false" data-tab="bake" data-i18n="tabBake">מעקב אפייה</button>
-      <button class="tab" role="tab" aria-selected="false" data-tab="recipes" data-i18n="tabRecipes">ספר המתכונים</button>
+      <button class="tab" role="tab" aria-selected="false" data-tab="recipes" data-i18n="tabRecipes">ספר
+        המתכונים</button>
     </nav>
 
     <main class="tab-panels">
@@ -96,20 +112,44 @@
           <!-- Starter selector -->
           <div class="starter-selector">
             <div id="starter-cards" class="starter-cards"></div>
-            <button id="btn-add-starter" class="flour-split-toggle" type="button" data-i18n="btnAddStarter">+ הוסף מחמצת</button>
+            <button id="btn-add-starter" class="flour-split-toggle" type="button" data-i18n="btnAddStarter">+ הוסף
+              מחמצת</button>
           </div>
 
           <!-- Active starter detail -->
           <div class="card" id="starter-detail-card">
             <div class="starter-detail-header">
-              <div>
-                <h2 id="starter-detail-name" data-i18n="routineTitle">האכלה שוטפת</h2>
-                <p id="starter-detail-age" class="card-subtitle"></p>
+              <div class="starter-photo-wrap" id="starter-photo-wrap">
+                <img id="starter-photo" class="starter-photo" src="" alt="">
+                <div id="starter-photo-placeholder" class="starter-photo-placeholder">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" />
+                    <circle cx="8.5" cy="8.5" r="1.5" />
+                    <path d="M21 15l-5-5L5 21" />
+                  </svg>
+                </div>
+                <input type="file" id="starter-photo-input" accept="image/*" class="starter-photo-file-input">
+              </div>
+              <div class="starter-detail-info">
+                <h2 id="starter-detail-name" class="starter-name-editable" data-i18n="routineTitle">האכלה שוטפת</h2>
+                <p id="starter-detail-age" class="card-subtitle starter-age-editable"></p>
+                <input type="date" id="starter-date-input" class="starter-date-input">
               </div>
               <span id="starter-status-badge" class="starter-status-badge"></span>
             </div>
+            <button id="btn-delete-starter" class="btn-delete-starter" type="button" style="display:none;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                <polyline points="3 6 5 6 21 6" />
+                <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6" />
+                <path d="M10 11v6" />
+                <path d="M14 11v6" />
+                <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2" />
+              </svg>
+              <span data-i18n="deleteStarter">מחק מחמצת</span>
+            </button>
             <div class="instruction-box">
-              <p data-i18n-html="routineInstruction">נשאיר <strong>30 גרם</strong> מחמצת, נאכיל ב-<strong>60 גרם קמח</strong> ו-<strong>60 גרם מים</strong>. נמתין 2-4 שעות לתחילת פעילות ונחזיר למקרר.</p>
+              <p data-i18n-html="routineInstruction">נשאיר <strong>30 גרם</strong> מחמצת, נאכיל ב-<strong>60 גרם
+                  קמח</strong> ו-<strong>60 גרם מים</strong>. נמתין 2-4 שעות לתחילת פעילות ונחזיר למקרר.</p>
             </div>
             <p id="last-refresh-time" class="meta-text" data-i18n="noFeedYet">טרם בוצעה האכלה</p>
             <p id="refresh-timer" class="timer-display"></p>
@@ -130,7 +170,8 @@
             </div>
 
             <label for="bread-weight" data-i18n="breadWeightLabel">משקל מחמצת לכל לחם (גרם)</label>
-            <input id="bread-weight" type="number" inputmode="numeric" min="10" value="100" data-i18n-placeholder="breadWeightPlaceholder" placeholder="100">
+            <input id="bread-weight" type="number" inputmode="numeric" min="10" value="100"
+              data-i18n-placeholder="breadWeightPlaceholder" placeholder="100">
 
             <label for="target-weight" data-i18n="targetWeightLabel">משקל יעד כולל (גרם)</label>
             <input id="target-weight" type="number" inputmode="numeric" min="50" placeholder="300">
@@ -167,8 +208,10 @@
               </div>
             </div>
 
-            <label for="tare-weight"><span data-i18n="tareLabel">משקל קופסה ריקה - טרה</span> <span class="optional-tag" data-i18n="optional">אופציונלי</span></label>
-            <input id="tare-weight" type="number" inputmode="numeric" min="0" data-i18n-placeholder="tarePlaceholder" placeholder="גרם">
+            <label for="tare-weight"><span data-i18n="tareLabel">משקל קופסה ריקה - טרה</span> <span class="optional-tag"
+                data-i18n="optional">אופציונלי</span></label>
+            <input id="tare-weight" type="number" inputmode="numeric" min="0" data-i18n-placeholder="tarePlaceholder"
+              placeholder="גרם">
 
             <div id="calc-result" class="calc-result hidden">
               <p id="calc-sentence" class="calc-sentence"></p>
@@ -246,10 +289,12 @@
 
           <label for="bp-flour" data-i18n="bpFlourLabel">סך הקמח הכולל (גרם)</label>
           <input id="bp-flour" type="number" inputmode="numeric" min="50" value="500">
-          <button id="btn-split-flour" class="flour-split-toggle" type="button" data-i18n="btnSplitFlour">+ פיצול סוגי קמח</button>
+          <button id="btn-split-flour" class="flour-split-toggle" type="button" data-i18n="btnSplitFlour">+ פיצול סוגי
+            קמח</button>
           <div id="flour-rows-container" class="hidden">
             <div id="flour-rows" class="flour-rows"></div>
-            <button id="btn-add-flour" class="flour-split-toggle" type="button" data-i18n="btnAddFlour">+ הוסף סוג קמח</button>
+            <button id="btn-add-flour" class="flour-split-toggle" type="button" data-i18n="btnAddFlour">+ הוסף סוג
+              קמח</button>
             <div class="flour-total-row">
               <span data-i18n="flourTotalLabel">סה״כ קמח</span>
               <span id="flour-total-display" class="flour-total-val">500g = 100%</span>
@@ -296,7 +341,8 @@
             </div>
           </div>
 
-          <button id="btn-save-recipe" class="btn btn-primary btn-large" data-i18n="bpSaveBtn">שמור לספר המתכונים</button>
+          <button id="btn-save-recipe" class="btn btn-primary btn-large" data-i18n="bpSaveBtn">שמור לספר
+            המתכונים</button>
         </div>
 
         <!-- Saved Recipes -->
@@ -354,4 +400,5 @@
 
   <script src="app.js"></script>
 </body>
+
 </html>

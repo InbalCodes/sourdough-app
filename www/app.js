@@ -215,6 +215,8 @@
       recipeLoadBtn: "טען למחשבון",
       recipeDeleteConfirm: "למחוק את המתכון?",
       recipeDeleteFailed: "מחיקה נכשלה",
+      confirmYes: "כן",
+      confirmNo: "ביטול",
       recipeSelected: "המתכון נטען! עברו ללשונית מעקב אפייה.",
       loading: "טוען…",
       saving: "שומר…",
@@ -396,6 +398,8 @@
       recipeLoadBtn: "Load into calculator",
       recipeDeleteConfirm: "Delete this recipe?",
       recipeDeleteFailed: "Delete failed",
+      confirmYes: "Yes",
+      confirmNo: "Cancel",
       recipeSelected: "Recipe loaded! Switch to the Bake tracker tab.",
       loading: "Loading…",
       saving: "Saving…",
@@ -1024,6 +1028,20 @@
       var badge = $("starter-status-badge");
       badge.textContent = statusLabel(status);
       badge.className = "starter-status-badge " + status;
+
+      // Photo
+      var photoEl = $("starter-photo");
+      if (active.photo) {
+        photoEl.src = active.photo;
+        photoEl.classList.add("has-photo");
+      } else {
+        photoEl.src = "";
+        photoEl.classList.remove("has-photo");
+      }
+
+      // Delete button — only show if more than 1 starter
+      var delBtn = $("btn-delete-starter");
+      delBtn.style.display = starters.length > 1 ? "" : "none";
     }
   }
 
@@ -1103,6 +1121,108 @@
     localStorage.setItem(SK.lastFed, now); // backward compat
     renderStarterCards();
     loadRefreshForActiveStarter();
+  });
+
+  // Tap starter name to edit
+  $("starter-detail-name").addEventListener("click", function () {
+    var nameEl = $("starter-detail-name");
+    if (nameEl.contentEditable === "true") return;
+    nameEl.contentEditable = "true";
+    nameEl.focus();
+    var range = document.createRange();
+    range.selectNodeContents(nameEl);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    function saveName() {
+      nameEl.contentEditable = "false";
+      var newName = nameEl.textContent.trim();
+      if (newName) {
+        var arr = getStarters();
+        var activeId = getActiveStarterId();
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].id === activeId) { arr[i].name = newName; break; }
+        }
+        saveStarters(arr);
+        renderStarterCards();
+      }
+      nameEl.removeEventListener("blur", saveName);
+      nameEl.removeEventListener("keydown", onKey);
+    }
+    function onKey(e) {
+      if (e.key === "Enter") { e.preventDefault(); nameEl.blur(); }
+    }
+    nameEl.addEventListener("blur", saveName);
+    nameEl.addEventListener("keydown", onKey);
+  });
+
+  // Tap starter age to change creation date
+  $("starter-detail-age").addEventListener("click", function () {
+    var active = getActiveStarter();
+    if (!active) return;
+    var dateInput = $("starter-date-input");
+    var d = new Date(active.creationDate);
+    dateInput.value = d.getFullYear() + "-" + String(d.getMonth() + 1).padStart(2, "0") + "-" + String(d.getDate()).padStart(2, "0");
+    dateInput.max = new Date().toISOString().split("T")[0];
+    dateInput.showPicker ? dateInput.showPicker() : dateInput.click();
+  });
+
+  $("starter-date-input").addEventListener("change", function () {
+    var val = this.value;
+    if (!val) return;
+    var arr = getStarters();
+    var activeId = getActiveStarterId();
+    for (var i = 0; i < arr.length; i++) {
+      if (arr[i].id === activeId) {
+        arr[i].creationDate = new Date(val + "T00:00:00").toISOString();
+        break;
+      }
+    }
+    saveStarters(arr);
+    renderStarterCards();
+  });
+
+  // Delete starter from detail card
+  $("btn-delete-starter").addEventListener("click", function () {
+    showConfirm(t("deleteStarterConfirm"), function () {
+      var id = getActiveStarterId();
+      var arr = getStarters().filter(function (s) { return s.id !== id; });
+      saveStarters(arr);
+      if (arr.length > 0) setActiveStarterId(arr[0].id);
+      renderStarterCards();
+      loadRefreshForActiveStarter();
+    });
+  });
+
+  // Starter photo upload
+  $("starter-photo-input").addEventListener("change", function (e) {
+    var file = e.target.files && e.target.files[0];
+    if (!file) return;
+    // Resize and store as base64 data URL
+    var reader = new FileReader();
+    reader.onload = function (ev) {
+      var img = new Image();
+      img.onload = function () {
+        var canvas = document.createElement("canvas");
+        var size = 200; // max dimension
+        var w = img.width, h = img.height;
+        if (w > h) { canvas.width = size; canvas.height = Math.round(h * size / w); }
+        else { canvas.height = size; canvas.width = Math.round(w * size / h); }
+        canvas.getContext("2d").drawImage(img, 0, 0, canvas.width, canvas.height);
+        var dataUrl = canvas.toDataURL("image/jpeg", 0.7);
+
+        var arr = getStarters();
+        var activeId = getActiveStarterId();
+        for (var i = 0; i < arr.length; i++) {
+          if (arr[i].id === activeId) { arr[i].photo = dataUrl; break; }
+        }
+        saveStarters(arr);
+        renderStarterCards();
+      };
+      img.src = ev.target.result;
+    };
+    reader.readAsDataURL(file);
+    e.target.value = ""; // reset so same file can be re-selected
   });
 
   // =========================================
@@ -1440,7 +1560,7 @@
     resetBtn.className = "btn btn-ghost btn-large reset-bake-btn";
     resetBtn.textContent = t("resetBakeBtn");
     resetBtn.addEventListener("click", function () {
-      if (confirm(t("resetBakeConfirm"))) clearBake();
+      showConfirm(t("resetBakeConfirm"), clearBake);
     });
     resetLi.appendChild(resetBtn);
     el.appendChild(resetLi);
@@ -1486,6 +1606,22 @@
 
     steps.push({ id: "score-bake", name: t("stepScoreBake"),
       desc: t("stepScoreBakeDesc"), bakePhaseStep: true });
+
+    // When a step is completed, subsequent unchecked steps should count
+    // elapsed time from the most recent completed predecessor's timestamp,
+    // instead of counting down to their original scheduled target.
+    var ca = state.completedAt || {};
+    var lastDoneTs = null;
+    for (var si = 0; si < steps.length; si++) {
+      var doneTs = toMs(ca[steps[si].id]);
+      if (doneTs && state.checked.includes(steps[si].id)) {
+        lastDoneTs = doneTs;
+      } else if (lastDoneTs && !steps[si].timerRef && steps[si].targetTs) {
+        // This step is unchecked and has a scheduled target but no manual timer —
+        // override so it counts up from the last completed step
+        steps[si].timerRef = lastDoneTs;
+      }
+    }
 
     return steps;
   }
@@ -1540,10 +1676,12 @@
       body.appendChild(d);
     }
 
-    if (step.targetTs) {
+    if (step.targetTs || step.timerRef) {
       var m = document.createElement("div");
       m.className = "step-meta";
-      m.textContent = formatTime(new Date(step.targetTs));
+      // Show actual start reference (from completed predecessor) over original schedule
+      var displayTs = step.timerRef || step.targetTs;
+      m.textContent = formatTime(new Date(displayTs));
       body.appendChild(m);
     }
 
@@ -1796,10 +1934,14 @@
       folds.push({ id: "fold-4", name: t("fold4"), desc: t("fold4Desc"), ms: 180*60000 });
     }
 
-    folds.forEach(function (fd) {
+    // Track last completed fold time so the next fold counts from it
+    var lastFoldDoneTs = null;
+
+    folds.forEach(function (fd, fi) {
       var sub = document.createElement("div");
       sub.className = "sub-step";
-      if (state.checked.includes(fd.id)) sub.classList.add("done");
+      var isDone = state.checked.includes(fd.id);
+      if (isDone) sub.classList.add("done");
 
       var scb = document.createElement("div");
       scb.className = "sub-checkbox";
@@ -1814,23 +1956,40 @@
           }
         } else { s.checked.splice(idx, 1); }
         saveBakeState(s);
-        sub.classList.toggle("done");
+        renderBakeUI();
       });
       sub.appendChild(scb);
+
+      // Determine timer reference: use previous fold's completion time if available
+      var scheduledTs = bulkStartMs + fd.ms;
+      var timerTs = (lastFoldDoneTs && !isDone) ? lastFoldDoneTs : scheduledTs;
 
       var bd = document.createElement("div");
       bd.className = "sub-step-body";
       var nm = document.createElement("div"); nm.className = "sub-step-name"; nm.textContent = fd.name; bd.appendChild(nm);
       var ds = document.createElement("div"); ds.className = "sub-step-desc"; ds.textContent = fd.desc; bd.appendChild(ds);
+
+      // Show start time
+      var mt = document.createElement("div");
+      mt.className = "step-meta";
+      mt.textContent = formatTime(new Date(timerTs));
+      bd.appendChild(mt);
+
       sub.appendChild(bd);
 
       var tm = document.createElement("span");
       tm.className = "sub-step-timer";
-      tm.dataset.foldtarget = String(bulkStartMs + fd.ms);
+      tm.dataset.foldtarget = String(timerTs);
       tm.dataset.chimekey = fd.id;
       sub.appendChild(tm);
 
       c.appendChild(sub);
+
+      // Update lastFoldDoneTs for next iteration
+      var foldDoneTs = toMs(state.foldStarts[fd.id]);
+      if (isDone && foldDoneTs) {
+        lastFoldDoneTs = foldDoneTs;
+      }
     });
 
     if (!state.fold4Added) {
@@ -2057,61 +2216,83 @@
   }
 
   [bpFlour, bpHydration, bpSalt, bpStarter].forEach(function (inp) {
-    inp.addEventListener("input", updateBPCalc);
+    inp.addEventListener("input", function () { updateBPCalc(); });
   });
 
   // --- Multi-flour split ---
 
-  var flourTypes = [];
+  var flourTypes = []; // each: { name, grams, pct }
   var flourSplitActive = false;
 
-  function getTotalFlour() {
-    if (!flourSplitActive || flourTypes.length === 0) {
-      return parseFloat(bpFlour.value) || 0;
-    }
+  function flourTypeSum() {
     var sum = 0;
     for (var i = 0; i < flourTypes.length; i++) sum += (flourTypes[i].grams || 0);
     return sum;
   }
 
+  function flourTypePctSum() {
+    var sum = 0;
+    for (var i = 0; i < flourTypes.length; i++) sum += (flourTypes[i].pct || 0);
+    return roundTo(sum);
+  }
+
+  function recalcGramsFromPct() {
+    var totalFlour = parseFloat(bpFlour.value) || 0;
+    for (var i = 0; i < flourTypes.length; i++) {
+      flourTypes[i].grams = roundTo(totalFlour * (flourTypes[i].pct || 0) / 100);
+    }
+  }
+
+  function updateFlourTotalDisplay() {
+    var totalFlour = parseFloat(bpFlour.value) || 0;
+    var pctSum = flourTypePctSum();
+    var display = $("flour-total-display");
+    var warning = pctSum > 100;
+    display.textContent = flourTypeSum() + "g / " + totalFlour + "g (" + pctSum + "%)";
+    display.style.color = warning ? "var(--danger)" : "";
+    display.style.fontWeight = warning ? "600" : "";
+  }
+
   function renderFlourRows() {
     var container = $("flour-rows");
-    var totalFlour = parseFloat(bpFlour.value) || 500;
     container.innerHTML = flourTypes.map(function (f, i) {
-      var pct = totalFlour > 0 ? roundTo(f.grams / totalFlour * 100) : 0;
       return '<div class="flour-row" data-idx="' + i + '">' +
         '<div class="flour-row-name"><label>' + t("flourTypeName") + '</label>' +
         '<input type="text" value="' + escHtml(f.name) + '" data-field="name" data-idx="' + i + '" placeholder="' + t("flourTypeNamePh") + '"></div>' +
         '<div class="flour-row-grams"><label>' + t("bpGrams") + '</label>' +
         '<input type="number" inputmode="numeric" value="' + f.grams + '" data-field="grams" data-idx="' + i + '" min="0"></div>' +
         '<div class="flour-row-pct"><label>%</label>' +
-        '<input type="number" inputmode="numeric" value="' + pct + '" data-field="pct" data-idx="' + i + '" min="0" max="100" step="0.1"></div>' +
+        '<input type="number" inputmode="numeric" value="' + roundTo(f.pct) + '" data-field="pct" data-idx="' + i + '" min="0" step="0.1"></div>' +
         '<button class="flour-row-remove" type="button" data-idx="' + i + '" aria-label="remove">&times;</button>' +
       '</div>';
     }).join("");
 
-    // Update total display
-    var sum = getTotalFlour();
-    $("flour-total-display").textContent = sum + "g = 100%";
+    updateFlourTotalDisplay();
 
     // Wire events
     container.querySelectorAll("input").forEach(function (inp) {
       inp.addEventListener("input", function () {
         var idx = Number(inp.dataset.idx);
         var field = inp.dataset.field;
-        var totalFlour = parseFloat(bpFlour.value) || 500;
+        var totalFlour = parseFloat(bpFlour.value) || 0;
 
         if (field === "name") {
           flourTypes[idx].name = inp.value;
+          return;
         } else if (field === "grams") {
+          // Changing grams updates percentage — total stays fixed
           flourTypes[idx].grams = parseFloat(inp.value) || 0;
-          // Update the total flour input to match sum
-          bpFlour.value = getTotalFlour();
+          flourTypes[idx].pct = totalFlour > 0 ? roundTo(flourTypes[idx].grams / totalFlour * 100) : flourTypes[idx].pct;
+          var pctInput = container.querySelector('input[data-field="pct"][data-idx="' + idx + '"]');
+          if (pctInput) pctInput.value = roundTo(flourTypes[idx].pct);
         } else if (field === "pct") {
-          var pct = parseFloat(inp.value) || 0;
-          flourTypes[idx].grams = roundTo(totalFlour * pct / 100);
+          // Changing percentage updates grams — total stays fixed
+          flourTypes[idx].pct = parseFloat(inp.value) || 0;
+          flourTypes[idx].grams = roundTo(totalFlour * flourTypes[idx].pct / 100);
+          var gramsInput = container.querySelector('input[data-field="grams"][data-idx="' + idx + '"]');
+          if (gramsInput) gramsInput.value = flourTypes[idx].grams;
         }
-        renderFlourRows();
+        updateFlourTotalDisplay();
         updateBPCalc();
       });
     });
@@ -2125,7 +2306,6 @@
           $("flour-rows-container").classList.add("hidden");
           $("btn-split-flour").classList.remove("hidden");
         }
-        bpFlour.value = getTotalFlour();
         renderFlourRows();
         updateBPCalc();
       });
@@ -2135,6 +2315,7 @@
   $("btn-split-flour").addEventListener("click", function () {
     flourSplitActive = true;
     var totalFlour = parseFloat(bpFlour.value) || 500;
+    _flourLastTotal = totalFlour;
     flourTypes = [
       { name: t("flourBread") || "Bread flour", grams: totalFlour, pct: 100 }
     ];
@@ -2148,15 +2329,20 @@
     renderFlourRows();
   });
 
-  // Override updateBPCalc to use getTotalFlour
+  // When total flour changes, recalculate all type grams from stored percentages
+  var _flourLastTotal = 0;
+  var _flourUpdating = false;
   (function () {
     var origUpdate = updateBPCalc;
     updateBPCalc = function () {
-      if (flourSplitActive) {
-        // Sync the main flour input with the sum of flour types
-        var sum = getTotalFlour();
-        if (parseFloat(bpFlour.value) !== sum) {
-          bpFlour.value = sum;
+      if (flourSplitActive && flourTypes.length > 0 && !_flourUpdating) {
+        var newTotal = parseFloat(bpFlour.value) || 0;
+        if (newTotal !== _flourLastTotal) {
+          _flourUpdating = true;
+          _flourLastTotal = newTotal;
+          recalcGramsFromPct();
+          renderFlourRows();
+          _flourUpdating = false;
         }
       }
       origUpdate();
@@ -2195,17 +2381,25 @@
 
   async function saveRecipeToServer(recipe) {
     var email = getUserEmail();
-    if (!email) return null;
+    if (!email) {
+      console.error("Save failed: not logged in");
+      return null;
+    }
     try {
       var res = await fetch(API_BASE + "/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "save", userEmail: email, recipe: recipe })
       });
+      if (!res.ok) {
+        console.error("Save failed: HTTP " + res.status);
+        return null;
+      }
       var data = await res.json();
       if (data.success && data.recipe) {
         return data.recipe;
       }
+      console.error("Save failed:", JSON.stringify(data));
       return null;
     } catch (e) {
       console.error("Failed to save recipe:", e);
@@ -2258,6 +2452,9 @@
         '</div>' +
         '<div class="recipe-percentages">' +
           '<span class="recipe-pct-tag"><strong>' + r.flour + 'g</strong> ' + t("bpFlourRow") + '</span>' +
+          (r.flourTypes && r.flourTypes.length > 0 ? r.flourTypes.map(function (f) {
+            return '<span class="recipe-pct-tag recipe-flour-type"><strong>' + f.grams + 'g</strong> ' + escHtml(f.name || t("flourTypeName")) + '</span>';
+          }).join("") : '') +
           '<span class="recipe-pct-tag"><strong>' + r.hydration + '%</strong> ' + t("bpWaterRow") + '</span>' +
           '<span class="recipe-pct-tag"><strong>' + r.salt + '%</strong> ' + t("bpSaltRow") + '</span>' +
           '<span class="recipe-pct-tag"><strong>' + r.starter + '%</strong> ' + t("bpStarterRow") + '</span>' +
@@ -2271,17 +2468,18 @@
 
     // Wire delete buttons
     list.querySelectorAll(".recipe-delete-btn").forEach(function (btn) {
-      btn.addEventListener("click", async function () {
-        if (!confirm(t("recipeDeleteConfirm"))) return;
-        var recordId = btn.dataset.id;
-        btn.disabled = true;
-        var ok = await deleteRecipeFromServer(recordId);
-        if (ok) {
-          await renderRecipes();
-        } else {
-          alert(t("recipeDeleteFailed") || "Delete failed");
-          btn.disabled = false;
-        }
+      btn.addEventListener("click", function () {
+        showConfirm(t("recipeDeleteConfirm"), async function () {
+          var recordId = btn.dataset.id;
+          btn.disabled = true;
+          var ok = await deleteRecipeFromServer(recordId);
+          if (ok) {
+            await renderRecipes();
+          } else {
+            alert(t("recipeDeleteFailed") || "Delete failed");
+            btn.disabled = false;
+          }
+        });
       });
     });
 
@@ -2295,6 +2493,16 @@
         bpHydration.value = r.hydration;
         bpSalt.value = r.salt;
         bpStarter.value = r.starter;
+        // Restore flour types if available
+        if (r.flourTypes && r.flourTypes.length > 0) {
+          flourTypes = r.flourTypes.map(function (f) {
+            return { name: f.name, grams: f.grams, pct: r.flour > 0 ? roundTo(f.grams / r.flour * 100) : 0 };
+          });
+          flourSplitActive = true;
+          $("flour-rows-container").classList.remove("hidden");
+          $("btn-split-flour").classList.add("hidden");
+          renderFlourRows();
+        }
         updateBPCalc();
         // Scroll to top of recipes panel
         $("panel-recipes").scrollTo({ top: 0, behavior: "smooth" });
@@ -2342,6 +2550,28 @@
     return d.innerHTML;
   }
 
+  function showConfirm(msg, onYes) {
+    var overlay = document.createElement("div");
+    overlay.className = "confirm-overlay";
+    overlay.innerHTML = '<div class="confirm-box">' +
+      '<p>' + escHtml(msg) + '</p>' +
+      '<div class="confirm-btns">' +
+        '<button class="btn btn-primary confirm-yes">' + t("confirmYes") + '</button>' +
+        '<button class="btn confirm-no">' + t("confirmNo") + '</button>' +
+      '</div></div>';
+    document.body.appendChild(overlay);
+    overlay.querySelector(".confirm-yes").addEventListener("click", function () {
+      document.body.removeChild(overlay);
+      onYes();
+    });
+    overlay.querySelector(".confirm-no").addEventListener("click", function () {
+      document.body.removeChild(overlay);
+    });
+    overlay.addEventListener("click", function (e) {
+      if (e.target === overlay) document.body.removeChild(overlay);
+    });
+  }
+
   // Save recipe button
   $("btn-save-recipe").addEventListener("click", async function () {
     var name = bpName.value.trim();
@@ -2356,6 +2586,12 @@
       salt: parseFloat(bpSalt.value) || 2,
       starter: parseFloat(bpStarter.value) || 20,
     };
+    // Include flour types if multi-flour is active
+    if (flourSplitActive && flourTypes.length > 0) {
+      recipe.flourTypes = flourTypes.map(function (f) {
+        return { name: f.name, grams: f.grams, pct: f.pct };
+      });
+    }
 
     var btn = $("btn-save-recipe");
     var origText = btn.textContent;

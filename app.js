@@ -2381,17 +2381,25 @@
 
   async function saveRecipeToServer(recipe) {
     var email = getUserEmail();
-    if (!email) return null;
+    if (!email) {
+      console.error("Save failed: not logged in");
+      return null;
+    }
     try {
       var res = await fetch(API_BASE + "/api/recipes", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ action: "save", userEmail: email, recipe: recipe })
       });
+      if (!res.ok) {
+        console.error("Save failed: HTTP " + res.status);
+        return null;
+      }
       var data = await res.json();
       if (data.success && data.recipe) {
         return data.recipe;
       }
+      console.error("Save failed:", JSON.stringify(data));
       return null;
     } catch (e) {
       console.error("Failed to save recipe:", e);
