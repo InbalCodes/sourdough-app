@@ -42,7 +42,7 @@
   --font-serif: 'Georgia', 'Playfair Display', 'Times New Roman', serif;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, 'Helvetica Neue', sans-serif;
   --font-hebrew: 'Heebo', 'Rubik', 'Assistant', 'Noto Sans Hebrew', -apple-system, system-ui, sans-serif;
-  --font-hebrew-serif: 'Frank Ruhl Libre', 'David Libre', 'Noto Serif Hebrew', Georgia, serif;
+  --font-hebrew-serif: 'Heebo', 'Rubik', 'Assistant', -apple-system, system-ui, sans-serif;
 
   color-scheme: light only;
 }
@@ -65,7 +65,8 @@ html[lang="he"] .header-title,
 html[lang="he"] .card h2,
 html[lang="he"] .step-name,
 html[lang="he"] .bp-result-card h3 {
-  font-family: var(--font-hebrew-serif);
+  font-family: var(--font-hebrew);
+  font-weight: 700;
 }
 
 body {
