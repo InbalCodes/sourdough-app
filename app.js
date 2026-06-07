@@ -1607,6 +1607,22 @@
     steps.push({ id: "score-bake", name: t("stepScoreBake"),
       desc: t("stepScoreBakeDesc"), bakePhaseStep: true });
 
+    // When a step is completed, subsequent unchecked steps should count
+    // elapsed time from the most recent completed predecessor's timestamp,
+    // instead of counting down to their original scheduled target.
+    var ca = state.completedAt || {};
+    var lastDoneTs = null;
+    for (var si = 0; si < steps.length; si++) {
+      var doneTs = toMs(ca[steps[si].id]);
+      if (doneTs && state.checked.includes(steps[si].id)) {
+        lastDoneTs = doneTs;
+      } else if (lastDoneTs && !steps[si].timerRef && steps[si].targetTs) {
+        // This step is unchecked and has a scheduled target but no manual timer —
+        // override so it counts up from the last completed step
+        steps[si].timerRef = lastDoneTs;
+      }
+    }
+
     return steps;
   }
 
@@ -1660,10 +1676,12 @@
       body.appendChild(d);
     }
 
-    if (step.targetTs) {
+    if (step.targetTs || step.timerRef) {
       var m = document.createElement("div");
       m.className = "step-meta";
-      m.textContent = formatTime(new Date(step.targetTs));
+      // Show actual start reference (from completed predecessor) over original schedule
+      var displayTs = step.timerRef || step.targetTs;
+      m.textContent = formatTime(new Date(displayTs));
       body.appendChild(m);
     }
 
@@ -1916,10 +1934,14 @@
       folds.push({ id: "fold-4", name: t("fold4"), desc: t("fold4Desc"), ms: 180*60000 });
     }
 
-    folds.forEach(function (fd) {
+    // Track last completed fold time so the next fold counts from it
+    var lastFoldDoneTs = null;
+
+    folds.forEach(function (fd, fi) {
       var sub = document.createElement("div");
       sub.className = "sub-step";
-      if (state.checked.includes(fd.id)) sub.classList.add("done");
+      var isDone = state.checked.includes(fd.id);
+      if (isDone) sub.classList.add("done");
 
       var scb = document.createElement("div");
       scb.className = "sub-checkbox";
@@ -1934,23 +1956,40 @@
           }
         } else { s.checked.splice(idx, 1); }
         saveBakeState(s);
-        sub.classList.toggle("done");
+        renderBakeUI();
       });
       sub.appendChild(scb);
+
+      // Determine timer reference: use previous fold's completion time if available
+      var scheduledTs = bulkStartMs + fd.ms;
+      var timerTs = (lastFoldDoneTs && !isDone) ? lastFoldDoneTs : scheduledTs;
 
       var bd = document.createElement("div");
       bd.className = "sub-step-body";
       var nm = document.createElement("div"); nm.className = "sub-step-name"; nm.textContent = fd.name; bd.appendChild(nm);
       var ds = document.createElement("div"); ds.className = "sub-step-desc"; ds.textContent = fd.desc; bd.appendChild(ds);
+
+      // Show start time
+      var mt = document.createElement("div");
+      mt.className = "step-meta";
+      mt.textContent = formatTime(new Date(timerTs));
+      bd.appendChild(mt);
+
       sub.appendChild(bd);
 
       var tm = document.createElement("span");
       tm.className = "sub-step-timer";
-      tm.dataset.foldtarget = String(bulkStartMs + fd.ms);
+      tm.dataset.foldtarget = String(timerTs);
       tm.dataset.chimekey = fd.id;
       sub.appendChild(tm);
 
       c.appendChild(sub);
+
+      // Update lastFoldDoneTs for next iteration
+      var foldDoneTs = toMs(state.foldStarts[fd.id]);
+      if (isDone && foldDoneTs) {
+        lastFoldDoneTs = foldDoneTs;
+      }
     });
 
     if (!state.fold4Added) {
