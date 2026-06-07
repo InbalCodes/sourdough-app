@@ -487,9 +487,15 @@
   function formatDuration(ms) {
     if (ms < 0) ms = 0;
     var s = Math.floor(ms / 1000);
+    var d = Math.floor(s / 86400);
+    s = s % 86400;
     var h = Math.floor(s / 3600);
     var m = Math.floor((s % 3600) / 60);
     s = s % 60;
+    if (d > 0) {
+      var dayLabel = currentLang === "he" ? (d === 1 ? "יום" : "ימים") : (d === 1 ? "day" : "days");
+      return d + " " + dayLabel + ", " + pad(h) + ":" + pad(m) + ":" + pad(s);
+    }
     return h > 0 ? pad(h) + ":" + pad(m) + ":" + pad(s) : pad(m) + ":" + pad(s);
   }
 
