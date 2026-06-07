@@ -493,8 +493,8 @@
     var m = Math.floor((s % 3600) / 60);
     s = s % 60;
     if (d > 0) {
-      var dayLabel = currentLang === "he" ? (d === 1 ? "יום" : "ימים") : (d === 1 ? "day" : "days");
-      return d + " " + dayLabel + ", " + pad(h) + ":" + pad(m) + ":" + pad(s);
+      var time = pad(h) + ":" + pad(m) + ":" + pad(s);
+      return d + "d " + time;
     }
     return h > 0 ? pad(h) + ":" + pad(m) + ":" + pad(s) : pad(m) + ":" + pad(s);
   }
