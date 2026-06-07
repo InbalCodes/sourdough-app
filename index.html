@@ -224,6 +224,15 @@
 
           <label for="bp-flour" data-i18n="bpFlourLabel">סך הקמח הכולל (גרם)</label>
           <input id="bp-flour" type="number" inputmode="numeric" min="50" value="500">
+          <button id="btn-split-flour" class="flour-split-toggle" type="button" data-i18n="btnSplitFlour">+ פיצול סוגי קמח</button>
+          <div id="flour-rows-container" class="hidden">
+            <div id="flour-rows" class="flour-rows"></div>
+            <button id="btn-add-flour" class="flour-split-toggle" type="button" data-i18n="btnAddFlour">+ הוסף סוג קמח</button>
+            <div class="flour-total-row">
+              <span data-i18n="flourTotalLabel">סה״כ קמח</span>
+              <span id="flour-total-display" class="flour-total-val">500g = 100%</span>
+            </div>
+          </div>
 
           <label for="bp-hydration" data-i18n="bpHydrationLabel">אחוז הידרציה / מים (%)</label>
           <input id="bp-hydration" type="number" inputmode="numeric" min="1" max="200" value="70">

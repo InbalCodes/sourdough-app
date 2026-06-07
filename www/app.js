@@ -175,6 +175,13 @@
       bpSaveBtn: "שמור לספר המתכונים",
       bpSaved: "נשמר!",
       bpNameRequired: "נא להזין שם למתכון",
+      btnSplitFlour: "+ פיצול סוגי קמח",
+      btnAddFlour: "+ הוסף סוג קמח",
+      flourTypeName: "סוג קמח",
+      flourTypeNamePh: "למשל: קמח לחם",
+      flourTotalLabel: "סה״כ קמח",
+      flourBread: "קמח לחם",
+      completedIn: "הושלם תוך",
       recipesTitle: "המתכונים השמורים שלי",
       noRecipes: "טרם נשמרו מתכונים",
       recipeSelectBtn: "בחר לאפייה",
@@ -327,6 +334,13 @@
       bpSaveBtn: "Save to recipe book",
       bpSaved: "Saved!",
       bpNameRequired: "Please enter a recipe name",
+      btnSplitFlour: "+ Split flour types",
+      btnAddFlour: "+ Add flour type",
+      flourTypeName: "Flour type",
+      flourTypeNamePh: "e.g. Bread flour",
+      flourTotalLabel: "Total flour",
+      flourBread: "Bread flour",
+      completedIn: "Completed in",
       recipesTitle: "My saved recipes",
       noRecipes: "No recipes saved yet",
       recipeSelectBtn: "Select for baking",
@@ -1031,6 +1045,16 @@
     }
 
     if (!state || !state.active) return null;
+    // Backward compat: add new fields if missing
+    if (!state.completedAt) state.completedAt = {};
+    if (!state.targetDurations) {
+      var ls = LIFESTYLES[state.scheduleType] || LIFESTYLES.worker;
+      state.targetDurations = {
+        levain: ls.levainHours * 60,
+        autolyse: ls.autolyseDef,
+        cold: ls.coldDefault * 60,
+      };
+    }
     return state;
   }
 
@@ -1049,11 +1073,18 @@
   }
 
   function startBake(lifestyle) {
+    var ls = LIFESTYLES[lifestyle];
     saveBakeState({
       active: true,
       startTime: new Date().toISOString(),
       scheduleType: lifestyle,
       checked: [],
+      completedAt: {},
+      targetDurations: {
+        levain: ls.levainHours * 60,
+        autolyse: ls.autolyseDef,
+        cold: ls.coldDefault * 60,
+      },
       autolyseStart: null,
       bulkStart: null,
       fold4Added: false,
@@ -1061,7 +1092,7 @@
       volumeStart: null,
       preShapeStart: null,
       coldStart: null,
-      coldHours: LIFESTYLES[lifestyle].coldDefault,
+      coldHours: ls.coldDefault,
       bakePhase1Start: null,
       bakePhase2Start: null,
       bakePhase1Temp: 250,
@@ -1172,11 +1203,19 @@
     cb.addEventListener("click", function () {
       var s = getBakeState();
       if (!s) return;
+      if (!s.completedAt) s.completedAt = {};
       var idx = s.checked.indexOf(step.id);
-      if (idx === -1) s.checked.push(step.id);
-      else s.checked.splice(idx, 1);
+      if (idx === -1) {
+        // Mark done — capture actual timestamp
+        s.checked.push(step.id);
+        s.completedAt[step.id] = new Date().toISOString();
+      } else {
+        // Uncheck
+        s.checked.splice(idx, 1);
+        delete s.completedAt[step.id];
+      }
       saveBakeState(s);
-      li.classList.toggle("done");
+      renderBakeUI();
     });
     li.appendChild(cb);
 
@@ -1208,7 +1247,23 @@
       body.appendChild(m);
     }
 
-    if (step.timerRef || step.targetTs) {
+    // Show actual completion time if done, otherwise show live timer
+    var completedAt = (state.completedAt || {})[step.id];
+    if (completedAt && state.checked.includes(step.id)) {
+      var completedMs = toMs(completedAt);
+      var startRef = step.timerRef || step.targetTs || toMs(state.startTime);
+      if (startRef && completedMs > startRef) {
+        var actualMin = Math.round((completedMs - startRef) / 60000);
+        var actualH = Math.floor(actualMin / 60);
+        var actualM = actualMin % 60;
+        var actualStr = actualH > 0 ? actualH + "h " + actualM + "m" : actualM + "m";
+        var doneEl = document.createElement("div");
+        doneEl.className = "step-elapsed";
+        doneEl.style.color = "var(--accent-text)";
+        doneEl.textContent = t("completedIn") + " " + actualStr;
+        body.appendChild(doneEl);
+      }
+    } else if (step.timerRef || step.targetTs) {
       var el = document.createElement("div");
       el.className = "step-elapsed";
       el.dataset.target = String(step.timerRef || step.targetTs);
@@ -1704,6 +1759,109 @@
   [bpFlour, bpHydration, bpSalt, bpStarter].forEach(function (inp) {
     inp.addEventListener("input", updateBPCalc);
   });
+
+  // --- Multi-flour split ---
+
+  var flourTypes = [];
+  var flourSplitActive = false;
+
+  function getTotalFlour() {
+    if (!flourSplitActive || flourTypes.length === 0) {
+      return parseFloat(bpFlour.value) || 0;
+    }
+    var sum = 0;
+    for (var i = 0; i < flourTypes.length; i++) sum += (flourTypes[i].grams || 0);
+    return sum;
+  }
+
+  function renderFlourRows() {
+    var container = $("flour-rows");
+    var totalFlour = parseFloat(bpFlour.value) || 500;
+    container.innerHTML = flourTypes.map(function (f, i) {
+      var pct = totalFlour > 0 ? roundTo(f.grams / totalFlour * 100) : 0;
+      return '<div class="flour-row" data-idx="' + i + '">' +
+        '<div class="flour-row-name"><label>' + t("flourTypeName") + '</label>' +
+        '<input type="text" value="' + escHtml(f.name) + '" data-field="name" data-idx="' + i + '" placeholder="' + t("flourTypeNamePh") + '"></div>' +
+        '<div class="flour-row-grams"><label>' + t("bpGrams") + '</label>' +
+        '<input type="number" inputmode="numeric" value="' + f.grams + '" data-field="grams" data-idx="' + i + '" min="0"></div>' +
+        '<div class="flour-row-pct"><label>%</label>' +
+        '<input type="number" inputmode="numeric" value="' + pct + '" data-field="pct" data-idx="' + i + '" min="0" max="100" step="0.1"></div>' +
+        '<button class="flour-row-remove" type="button" data-idx="' + i + '" aria-label="remove">&times;</button>' +
+      '</div>';
+    }).join("");
+
+    // Update total display
+    var sum = getTotalFlour();
+    $("flour-total-display").textContent = sum + "g = 100%";
+
+    // Wire events
+    container.querySelectorAll("input").forEach(function (inp) {
+      inp.addEventListener("input", function () {
+        var idx = Number(inp.dataset.idx);
+        var field = inp.dataset.field;
+        var totalFlour = parseFloat(bpFlour.value) || 500;
+
+        if (field === "name") {
+          flourTypes[idx].name = inp.value;
+        } else if (field === "grams") {
+          flourTypes[idx].grams = parseFloat(inp.value) || 0;
+          // Update the total flour input to match sum
+          bpFlour.value = getTotalFlour();
+        } else if (field === "pct") {
+          var pct = parseFloat(inp.value) || 0;
+          flourTypes[idx].grams = roundTo(totalFlour * pct / 100);
+        }
+        renderFlourRows();
+        updateBPCalc();
+      });
+    });
+
+    container.querySelectorAll(".flour-row-remove").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var idx = Number(btn.dataset.idx);
+        flourTypes.splice(idx, 1);
+        if (flourTypes.length === 0) {
+          flourSplitActive = false;
+          $("flour-rows-container").classList.add("hidden");
+          $("btn-split-flour").classList.remove("hidden");
+        }
+        bpFlour.value = getTotalFlour();
+        renderFlourRows();
+        updateBPCalc();
+      });
+    });
+  }
+
+  $("btn-split-flour").addEventListener("click", function () {
+    flourSplitActive = true;
+    var totalFlour = parseFloat(bpFlour.value) || 500;
+    flourTypes = [
+      { name: t("flourBread") || "Bread flour", grams: totalFlour, pct: 100 }
+    ];
+    $("flour-rows-container").classList.remove("hidden");
+    $("btn-split-flour").classList.add("hidden");
+    renderFlourRows();
+  });
+
+  $("btn-add-flour").addEventListener("click", function () {
+    flourTypes.push({ name: "", grams: 0, pct: 0 });
+    renderFlourRows();
+  });
+
+  // Override updateBPCalc to use getTotalFlour
+  (function () {
+    var origUpdate = updateBPCalc;
+    updateBPCalc = function () {
+      if (flourSplitActive) {
+        // Sync the main flour input with the sum of flour types
+        var sum = getTotalFlour();
+        if (parseFloat(bpFlour.value) !== sum) {
+          bpFlour.value = sum;
+        }
+      }
+      origUpdate();
+    };
+  })();
 
   // --- Recipe persistence (Airtable-backed) ---
 
