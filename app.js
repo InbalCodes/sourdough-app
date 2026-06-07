@@ -2216,61 +2216,83 @@
   }
 
   [bpFlour, bpHydration, bpSalt, bpStarter].forEach(function (inp) {
-    inp.addEventListener("input", updateBPCalc);
+    inp.addEventListener("input", function () { updateBPCalc(); });
   });
 
   // --- Multi-flour split ---
 
-  var flourTypes = [];
+  var flourTypes = []; // each: { name, grams, pct }
   var flourSplitActive = false;
 
-  function getTotalFlour() {
-    if (!flourSplitActive || flourTypes.length === 0) {
-      return parseFloat(bpFlour.value) || 0;
-    }
+  function flourTypeSum() {
     var sum = 0;
     for (var i = 0; i < flourTypes.length; i++) sum += (flourTypes[i].grams || 0);
     return sum;
   }
 
+  function flourTypePctSum() {
+    var sum = 0;
+    for (var i = 0; i < flourTypes.length; i++) sum += (flourTypes[i].pct || 0);
+    return roundTo(sum);
+  }
+
+  function recalcGramsFromPct() {
+    var totalFlour = parseFloat(bpFlour.value) || 0;
+    for (var i = 0; i < flourTypes.length; i++) {
+      flourTypes[i].grams = roundTo(totalFlour * (flourTypes[i].pct || 0) / 100);
+    }
+  }
+
+  function updateFlourTotalDisplay() {
+    var totalFlour = parseFloat(bpFlour.value) || 0;
+    var pctSum = flourTypePctSum();
+    var display = $("flour-total-display");
+    var warning = pctSum > 100;
+    display.textContent = flourTypeSum() + "g / " + totalFlour + "g (" + pctSum + "%)";
+    display.style.color = warning ? "var(--danger)" : "";
+    display.style.fontWeight = warning ? "600" : "";
+  }
+
   function renderFlourRows() {
     var container = $("flour-rows");
-    var totalFlour = parseFloat(bpFlour.value) || 500;
     container.innerHTML = flourTypes.map(function (f, i) {
-      var pct = totalFlour > 0 ? roundTo(f.grams / totalFlour * 100) : 0;
       return '<div class="flour-row" data-idx="' + i + '">' +
         '<div class="flour-row-name"><label>' + t("flourTypeName") + '</label>' +
         '<input type="text" value="' + escHtml(f.name) + '" data-field="name" data-idx="' + i + '" placeholder="' + t("flourTypeNamePh") + '"></div>' +
         '<div class="flour-row-grams"><label>' + t("bpGrams") + '</label>' +
         '<input type="number" inputmode="numeric" value="' + f.grams + '" data-field="grams" data-idx="' + i + '" min="0"></div>' +
         '<div class="flour-row-pct"><label>%</label>' +
-        '<input type="number" inputmode="numeric" value="' + pct + '" data-field="pct" data-idx="' + i + '" min="0" max="100" step="0.1"></div>' +
+        '<input type="number" inputmode="numeric" value="' + roundTo(f.pct) + '" data-field="pct" data-idx="' + i + '" min="0" step="0.1"></div>' +
         '<button class="flour-row-remove" type="button" data-idx="' + i + '" aria-label="remove">&times;</button>' +
       '</div>';
     }).join("");
 
-    // Update total display
-    var sum = getTotalFlour();
-    $("flour-total-display").textContent = sum + "g = 100%";
+    updateFlourTotalDisplay();
 
     // Wire events
     container.querySelectorAll("input").forEach(function (inp) {
       inp.addEventListener("input", function () {
         var idx = Number(inp.dataset.idx);
         var field = inp.dataset.field;
-        var totalFlour = parseFloat(bpFlour.value) || 500;
+        var totalFlour = parseFloat(bpFlour.value) || 0;
 
         if (field === "name") {
           flourTypes[idx].name = inp.value;
+          return;
         } else if (field === "grams") {
+          // Changing grams updates percentage — total stays fixed
           flourTypes[idx].grams = parseFloat(inp.value) || 0;
-          // Update the total flour input to match sum
-          bpFlour.value = getTotalFlour();
+          flourTypes[idx].pct = totalFlour > 0 ? roundTo(flourTypes[idx].grams / totalFlour * 100) : flourTypes[idx].pct;
+          var pctInput = container.querySelector('input[data-field="pct"][data-idx="' + idx + '"]');
+          if (pctInput) pctInput.value = roundTo(flourTypes[idx].pct);
         } else if (field === "pct") {
-          var pct = parseFloat(inp.value) || 0;
-          flourTypes[idx].grams = roundTo(totalFlour * pct / 100);
+          // Changing percentage updates grams — total stays fixed
+          flourTypes[idx].pct = parseFloat(inp.value) || 0;
+          flourTypes[idx].grams = roundTo(totalFlour * flourTypes[idx].pct / 100);
+          var gramsInput = container.querySelector('input[data-field="grams"][data-idx="' + idx + '"]');
+          if (gramsInput) gramsInput.value = flourTypes[idx].grams;
         }
-        renderFlourRows();
+        updateFlourTotalDisplay();
         updateBPCalc();
       });
     });
@@ -2284,7 +2306,6 @@
           $("flour-rows-container").classList.add("hidden");
           $("btn-split-flour").classList.remove("hidden");
         }
-        bpFlour.value = getTotalFlour();
         renderFlourRows();
         updateBPCalc();
       });
@@ -2294,6 +2315,7 @@
   $("btn-split-flour").addEventListener("click", function () {
     flourSplitActive = true;
     var totalFlour = parseFloat(bpFlour.value) || 500;
+    _flourLastTotal = totalFlour;
     flourTypes = [
       { name: t("flourBread") || "Bread flour", grams: totalFlour, pct: 100 }
     ];
@@ -2307,15 +2329,20 @@
     renderFlourRows();
   });
 
-  // Override updateBPCalc to use getTotalFlour
+  // When total flour changes, recalculate all type grams from stored percentages
+  var _flourLastTotal = 0;
+  var _flourUpdating = false;
   (function () {
     var origUpdate = updateBPCalc;
     updateBPCalc = function () {
-      if (flourSplitActive) {
-        // Sync the main flour input with the sum of flour types
-        var sum = getTotalFlour();
-        if (parseFloat(bpFlour.value) !== sum) {
-          bpFlour.value = sum;
+      if (flourSplitActive && flourTypes.length > 0 && !_flourUpdating) {
+        var newTotal = parseFloat(bpFlour.value) || 0;
+        if (newTotal !== _flourLastTotal) {
+          _flourUpdating = true;
+          _flourLastTotal = newTotal;
+          recalcGramsFromPct();
+          renderFlourRows();
+          _flourUpdating = false;
         }
       }
       origUpdate();
@@ -2417,6 +2444,9 @@
         '</div>' +
         '<div class="recipe-percentages">' +
           '<span class="recipe-pct-tag"><strong>' + r.flour + 'g</strong> ' + t("bpFlourRow") + '</span>' +
+          (r.flourTypes && r.flourTypes.length > 0 ? r.flourTypes.map(function (f) {
+            return '<span class="recipe-pct-tag recipe-flour-type"><strong>' + f.grams + 'g</strong> ' + escHtml(f.name || t("flourTypeName")) + '</span>';
+          }).join("") : '') +
           '<span class="recipe-pct-tag"><strong>' + r.hydration + '%</strong> ' + t("bpWaterRow") + '</span>' +
           '<span class="recipe-pct-tag"><strong>' + r.salt + '%</strong> ' + t("bpSaltRow") + '</span>' +
           '<span class="recipe-pct-tag"><strong>' + r.starter + '%</strong> ' + t("bpStarterRow") + '</span>' +
@@ -2455,6 +2485,16 @@
         bpHydration.value = r.hydration;
         bpSalt.value = r.salt;
         bpStarter.value = r.starter;
+        // Restore flour types if available
+        if (r.flourTypes && r.flourTypes.length > 0) {
+          flourTypes = r.flourTypes.map(function (f) {
+            return { name: f.name, grams: f.grams, pct: r.flour > 0 ? roundTo(f.grams / r.flour * 100) : 0 };
+          });
+          flourSplitActive = true;
+          $("flour-rows-container").classList.remove("hidden");
+          $("btn-split-flour").classList.add("hidden");
+          renderFlourRows();
+        }
         updateBPCalc();
         // Scroll to top of recipes panel
         $("panel-recipes").scrollTo({ top: 0, behavior: "smooth" });
@@ -2538,6 +2578,12 @@
       salt: parseFloat(bpSalt.value) || 2,
       starter: parseFloat(bpStarter.value) || 20,
     };
+    // Include flour types if multi-flour is active
+    if (flourSplitActive && flourTypes.length > 0) {
+      recipe.flourTypes = flourTypes.map(function (f) {
+        return { name: f.name, grams: f.grams };
+      });
+    }
 
     var btn = $("btn-save-recipe");
     var origText = btn.textContent;

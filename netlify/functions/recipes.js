@@ -71,6 +71,8 @@ exports.handler = async function (event) {
       var data = await res.json();
 
       var recipes = (data.records || []).map(function (rec) {
+        var ft = null;
+        try { ft = rec.fields.FlourTypes ? JSON.parse(rec.fields.FlourTypes) : null; } catch (e) {}
         return {
           id: rec.id,
           name: rec.fields.Name || "",
@@ -78,6 +80,7 @@ exports.handler = async function (event) {
           hydration: Number(rec.fields.Hydration) || 70,
           salt: Number(rec.fields.Salt) || 2,
           starter: Number(rec.fields.Starter) || 20,
+          flourTypes: ft,
         };
       });
 
@@ -97,14 +100,20 @@ exports.handler = async function (event) {
         method: "POST",
         headers: airtableHeaders(AIRTABLE_TOKEN),
         body: JSON.stringify({
-          fields: {
-            Name: recipe.name,
-            Flour: recipe.flour || 500,
-            Hydration: recipe.hydration || 70,
-            Salt: recipe.salt || 2,
-            Starter: recipe.starter || 20,
-            UserEmail: userEmail,
-          }
+          fields: (function () {
+            var f = {
+              Name: recipe.name,
+              Flour: recipe.flour || 500,
+              Hydration: recipe.hydration || 70,
+              Salt: recipe.salt || 2,
+              Starter: recipe.starter || 20,
+              UserEmail: userEmail,
+            };
+            if (recipe.flourTypes && recipe.flourTypes.length > 0) {
+              f.FlourTypes = JSON.stringify(recipe.flourTypes);
+            }
+            return f;
+          })()
         })
       });
 
@@ -123,6 +132,7 @@ exports.handler = async function (event) {
           hydration: recipe.hydration,
           salt: recipe.salt,
           starter: recipe.starter,
+          flourTypes: recipe.flourTypes || null,
         }
       });
     }
