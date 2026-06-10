@@ -86,8 +86,10 @@
       greeting: "שלום, ",
 
       // Steps
-      stepLevain: "האכלת מחמצת לאפייה",
-      stepLevainDesc: "להשאיר בחוץ {h} שעות. השתמשו במחשבון בטאב הראשון.",
+      stepFeedStarter: "האכלת מחמצת לאפייה",
+      stepFeedStarterDesc: "השתמשו במחשבון בטאב הראשון.",
+      stepStarterReady: "מחמצת בשיא",
+      stepStarterReadyDesc: "המחמצת מוכנה לאחר {h} שעות. הגיע הזמן ללוש!",
       stepAutolyse: "אוטוליזה / פרמנטוליזה",
       stepAutolyseDesc: "{m} דקות (ברירת מחדל). ניתן להפעיל במקביל לשעה האחרונה של תפיחת המחמצת.",
       stepBulk: "לישה + תחילת באלק",
@@ -275,8 +277,10 @@
       startLabel: "Started: ",
       greeting: "Hi, ",
 
-      stepLevain: "Feed starter for baking",
-      stepLevainDesc: "Leave at room temp for {h} hours. Use the calculator in the first tab.",
+      stepFeedStarter: "Feed starter for baking",
+      stepFeedStarterDesc: "Use the calculator in the first tab.",
+      stepStarterReady: "Starter at peak",
+      stepStarterReadyDesc: "Starter is ready after {h} hours. Time to mix!",
       stepAutolyse: "Autolyse / Fermentolyse",
       stepAutolyseDesc: "{m} minutes (default). Can run in parallel with the last hour of starter rising.",
       stepBulk: "Mix + start bulk",
@@ -1473,6 +1477,18 @@
     if (!state || !state.active) return null;
     // Backward compat: add new fields if missing
     if (!state.completedAt) state.completedAt = {};
+    // Migrate old "levain" step to new "feed-starter" + "starter-ready"
+    if (state.checked && state.checked.includes("levain")) {
+      state.checked = state.checked.filter(function (id) { return id !== "levain"; });
+      if (!state.checked.includes("feed-starter")) state.checked.push("feed-starter");
+      if (!state.checked.includes("starter-ready")) state.checked.push("starter-ready");
+      if (state.completedAt["levain"]) {
+        if (!state.completedAt["feed-starter"]) state.completedAt["feed-starter"] = state.completedAt["levain"];
+        if (!state.completedAt["starter-ready"]) state.completedAt["starter-ready"] = state.completedAt["levain"];
+        delete state.completedAt["levain"];
+      }
+      saveBakeState(state);
+    }
     if (!state.targetDurations) {
       var ls = LIFESTYLES[state.scheduleType] || LIFESTYLES.worker;
       state.targetDurations = {
@@ -1577,9 +1593,13 @@
     var autolyseRec = levainEnd - ls.autolyseDef * 60000;
     var steps = [];
 
-    steps.push({ id: "levain", name: t("stepLevain"),
-      desc: t("stepLevainDesc").replace("{h}", ls.levainHours),
+    steps.push({ id: "feed-starter", name: t("stepFeedStarter"),
+      desc: t("stepFeedStarterDesc"),
       targetTs: startMs, timerRef: startMs });
+
+    steps.push({ id: "starter-ready", name: t("stepStarterReady"),
+      desc: t("stepStarterReadyDesc").replace("{h}", ls.levainHours),
+      targetTs: levainEnd });
 
     steps.push({ id: "autolyse", name: t("stepAutolyse"),
       desc: t("stepAutolyseDesc").replace("{m}", ls.autolyseDef),
@@ -1682,32 +1702,25 @@
       body.appendChild(d);
     }
 
-    if (step.targetTs || step.timerRef) {
+    var isDone = state.checked.includes(step.id);
+    var completedAt = (state.completedAt || {})[step.id];
+
+    // Show time: for completed steps show actual completion time, otherwise show start reference
+    if (isDone && completedAt) {
       var m = document.createElement("div");
       m.className = "step-meta";
-      // Show actual start reference (from completed predecessor) over original schedule
+      m.textContent = formatTime(new Date(completedAt));
+      body.appendChild(m);
+    } else if (step.targetTs || step.timerRef) {
+      var m = document.createElement("div");
+      m.className = "step-meta";
       var displayTs = step.timerRef || step.targetTs;
       m.textContent = formatTime(new Date(displayTs));
       body.appendChild(m);
     }
 
-    // Show actual completion time if done, otherwise show live timer
-    var completedAt = (state.completedAt || {})[step.id];
-    if (completedAt && state.checked.includes(step.id)) {
-      var completedMs = toMs(completedAt);
-      var startRef = step.timerRef || step.targetTs || toMs(state.startTime);
-      if (startRef && completedMs > startRef) {
-        var actualMin = Math.round((completedMs - startRef) / 60000);
-        var actualH = Math.floor(actualMin / 60);
-        var actualM = actualMin % 60;
-        var actualStr = actualH > 0 ? actualH + "h " + actualM + "m" : actualM + "m";
-        var doneEl = document.createElement("div");
-        doneEl.className = "step-elapsed";
-        doneEl.style.color = "var(--accent-text)";
-        doneEl.textContent = t("completedIn") + " " + actualStr;
-        body.appendChild(doneEl);
-      }
-    } else if (step.timerRef || step.targetTs) {
+    // Show live timer only for incomplete steps (no timer on completed phases)
+    if (!isDone && (step.timerRef || step.targetTs)) {
       var el = document.createElement("div");
       el.className = "step-elapsed";
       el.dataset.target = String(step.timerRef || step.targetTs);
@@ -1975,19 +1988,27 @@
       var nm = document.createElement("div"); nm.className = "sub-step-name"; nm.textContent = fd.name; bd.appendChild(nm);
       var ds = document.createElement("div"); ds.className = "sub-step-desc"; ds.textContent = fd.desc; bd.appendChild(ds);
 
-      // Show start time
+      // Show time: actual completion time for done folds, otherwise start reference
+      var foldCompletedTs = toMs(state.foldStarts[fd.id]);
       var mt = document.createElement("div");
       mt.className = "step-meta";
-      mt.textContent = formatTime(new Date(timerTs));
+      if (isDone && foldCompletedTs) {
+        mt.textContent = formatTime(new Date(foldCompletedTs));
+      } else {
+        mt.textContent = formatTime(new Date(timerTs));
+      }
       bd.appendChild(mt);
 
       sub.appendChild(bd);
 
-      var tm = document.createElement("span");
-      tm.className = "sub-step-timer";
-      tm.dataset.foldtarget = String(timerTs);
-      tm.dataset.chimekey = fd.id;
-      sub.appendChild(tm);
+      // Only show timer for incomplete folds
+      if (!isDone) {
+        var tm = document.createElement("span");
+        tm.className = "sub-step-timer";
+        tm.dataset.foldtarget = String(timerTs);
+        tm.dataset.chimekey = fd.id;
+        sub.appendChild(tm);
+      }
 
       c.appendChild(sub);
 
