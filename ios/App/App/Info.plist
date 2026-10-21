@@ -30,7 +30,25 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
-		<string>armv7</string>
+		<string>arm64</string>
+	</array>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.inbal.levain</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.inbal.levain</string>
+			</array>
+		</dict>
+	</array>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>he</string>
+		<string>en</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
