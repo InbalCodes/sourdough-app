@@ -7,6 +7,7 @@
 
   var SK = {
     userEmail: "levain_user_email",
+    session: "levain_session",
     userName: "levain_user_name",
     language: "levain_language",
     lastFed: "levain_last_fed",
@@ -208,6 +209,12 @@
       settingsBakeAlerts: "התראות שלבי אפייה",
       settingsFeedReminder: "תזכורת האכלה",
       settingsStarterMgmt: "ניהול מחמצות",
+      settingsAccount: "חשבון",
+      deleteAccountBtn: "מחיקת חשבון",
+      deleteAccountHint: "מוחק לצמיתות את החשבון ואת כל המתכונים השמורים. אי אפשר לבטל.",
+      deleteAccountConfirm: "למחוק לצמיתות את החשבון ואת כל המתכונים? אי אפשר לבטל את הפעולה.",
+      deleteAccountDone: "החשבון נמחק",
+      sessionExpired: "פג תוקף ההתחברות. התחברו שוב.",
       unitGrams: "גרם",
       unitOz: "oz",
 
@@ -393,6 +400,12 @@
       settingsBakeAlerts: "Bake stage alerts",
       settingsFeedReminder: "Feed reminder",
       settingsStarterMgmt: "Starter management",
+      settingsAccount: "Account",
+      deleteAccountBtn: "Delete account",
+      deleteAccountHint: "Permanently deletes your account and all saved recipes. This cannot be undone.",
+      deleteAccountConfirm: "Permanently delete your account and all recipes? This cannot be undone.",
+      deleteAccountDone: "Your account was deleted",
+      sessionExpired: "Your session expired. Please sign in again.",
       unitGrams: "grams",
       unitOz: "oz",
 
@@ -613,7 +626,17 @@
   }
 
   function isLoggedIn() {
-    return !!localStorage.getItem(SK.userEmail);
+    return !!localStorage.getItem(SK.userEmail) && !!localStorage.getItem(SK.session);
+  }
+
+  function getSession() {
+    return localStorage.getItem(SK.session) || "";
+  }
+
+  function clearAuth() {
+    localStorage.removeItem(SK.userEmail);
+    localStorage.removeItem(SK.userName);
+    localStorage.removeItem(SK.session);
   }
 
   function showApp() {
@@ -631,9 +654,15 @@
     hideAuthError();
   }
 
-  function completeLogin(email, name) {
+  function completeLogin(email, name, session) {
+    if (!email || !session) {
+      showLogin();
+      showAuthError(t("errGeneric"));
+      return;
+    }
     localStorage.setItem(SK.userEmail, email);
     localStorage.setItem(SK.userName, name);
+    localStorage.setItem(SK.session, session);
     hideAuthError();
     showApp();
     initApp();
@@ -674,7 +703,7 @@
         });
         if (params.google_auth === "1" && params.email) {
           stopPolling();
-          completeLogin(params.email, params.name || "");
+          completeLogin(params.email, params.name || "", params.session || "");
         }
       } catch (e) {
         console.error("[Levain] Deep link parse error:", e);
@@ -700,7 +729,7 @@
               stopPolling();
               currentPollToken = null;
               if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
-              completeLogin(data.email, data.name || "");
+              completeLogin(data.email, data.name || "", data.session || "");
             }
           })
           .catch(function (err) {
@@ -734,7 +763,7 @@
     }
 
     if (params.google_auth === "1" && params.email) {
-      completeLogin(params.email, params.name || "");
+      completeLogin(params.email, params.name || "", params.session || "");
       return true;
     }
 
@@ -744,9 +773,11 @@
   /** Generate a random token for native OAuth polling */
   function generateToken() {
     var chars = "abcdefghijklmnopqrstuvwxyz0123456789";
+    var bytes = new Uint8Array(32);
+    window.crypto.getRandomValues(bytes);
     var token = "";
-    for (var i = 0; i < 32; i++) {
-      token += chars.charAt(Math.floor(Math.random() * chars.length));
+    for (var i = 0; i < bytes.length; i++) {
+      token += chars.charAt(bytes[i] % chars.length);
     }
     return token;
   }
@@ -777,7 +808,7 @@
             authPollTimer = null;
             // Close the Custom Chrome Tab
             if (CapBrowser) { try { CapBrowser.close(); } catch (e) {} }
-            completeLogin(data.email, data.name || "");
+            completeLogin(data.email, data.name || "", data.session || "");
           }
           // If data.pending, keep polling
         })
@@ -853,8 +884,7 @@
   $("btn-logout").addEventListener("click", function () {
     stopPolling();
     currentPollToken = null;
-    localStorage.removeItem(SK.userEmail);
-    localStorage.removeItem(SK.userName);
+    clearAuth();
     // Reset Google button state
     var btn = $("btn-google-signin");
     btn.querySelector("span").textContent = t("googleSignInBtn");
@@ -901,6 +931,27 @@
     $("setting-bake-alerts").checked = s.bakeAlerts !== false;
     $("setting-feed-reminder").checked = s.feedReminder !== false;
     $("settings-overlay").classList.remove("hidden");
+  });
+
+  $("btn-delete-account").addEventListener("click", async function () {
+    if (!window.confirm(t("deleteAccountConfirm"))) return;
+    var btn = $("btn-delete-account");
+    btn.disabled = true;
+    try {
+      var res = await authFetch("/api/account", { action: "delete" });
+      var data = await res.json();
+      if (!data.success) throw new Error(data.error || "DELETE_FAILED");
+      clearAuth();
+      recipesCache = [];
+      $("settings-overlay").classList.add("hidden");
+      showLogin();
+      showToast(t("deleteAccountDone"));
+    } catch (e) {
+      console.error("Account deletion failed:", e);
+      if (isLoggedIn()) showToast(t("errGeneric"));
+    } finally {
+      btn.disabled = false;
+    }
   });
 
   $("btn-close-settings").addEventListener("click", function () {
@@ -2385,15 +2436,27 @@
     return (localStorage.getItem(SK.userEmail) || "").trim().toLowerCase();
   }
 
+  /** POST to an authenticated API endpoint. Signs the user out if the session is rejected. */
+  async function authFetch(path, payload) {
+    var res = await fetch(API_BASE + path, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Authorization": "Bearer " + getSession() },
+      body: JSON.stringify(payload)
+    });
+    if (res.status === 401) {
+      clearAuth();
+      showLogin();
+      showAuthError(t("sessionExpired"));
+      throw new Error("Session rejected");
+    }
+    return res;
+  }
+
   async function fetchRecipesFromServer() {
     var email = getUserEmail();
     if (!email) return [];
     try {
-      var res = await fetch(API_BASE + "/api/recipes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "list", userEmail: email })
-      });
+      var res = await authFetch("/api/recipes", { action: "list" });
       var data = await res.json();
       if (data.success && data.recipes) {
         recipesCache = data.recipes;
@@ -2413,11 +2476,7 @@
       return null;
     }
     try {
-      var res = await fetch(API_BASE + "/api/recipes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "save", userEmail: email, recipe: recipe })
-      });
+      var res = await authFetch("/api/recipes", { action: "save", recipe: recipe });
       if (!res.ok) {
         console.error("Save failed: HTTP " + res.status);
         return null;
@@ -2438,11 +2497,7 @@
     var email = getUserEmail();
     if (!email) return false;
     try {
-      var res = await fetch(API_BASE + "/api/recipes", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "delete", userEmail: email, recordId: recordId })
-      });
+      var res = await authFetch("/api/recipes", { action: "delete", recordId: recordId });
       var data = await res.json();
       return !!data.success;
     } catch (e) {

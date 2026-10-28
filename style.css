@@ -1938,3 +1938,28 @@ select:focus {
 }
 
 /* Dark mode disabled — light-only artisanal theme */
+
+/* Account deletion (settings) */
+.settings-hint {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.btn-danger-outline {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 0.88rem;
+  background: transparent;
+  border: 1px solid var(--danger);
+  color: var(--danger);
+}
+
+.btn-danger-outline:active {
+  background: var(--danger-bg);
+}
+
+.btn-danger-outline:disabled {
+  opacity: 0.5;
+}

@@ -3,6 +3,7 @@
 // stores result in PendingAuth for native polling, or redirects for web.
 
 var NETLIFY_ORIGIN = "https://vocal-lolly-7ebc53.netlify.app";
+var createSession = require("../lib/session").createSession;
 
 function airtableUrl(base, table, recordId) {
   var url = "https://api.airtable.com/v0/" + base + "/" + encodeURIComponent(table);
@@ -96,6 +97,10 @@ exports.handler = async function (event) {
     var userInfo = await userRes.json();
     var email = (userInfo.email || "").toLowerCase();
     var name = userInfo.name || "";
+    if (!email || userInfo.email_verified === false) {
+      throw new Error("Google account has no verified email");
+    }
+    var session = createSession(email, name);
 
     // 3. Upsert to Airtable Users (best-effort)
     if (AIRTABLE_TOKEN && AIRTABLE_BASE && email) {
@@ -147,7 +152,8 @@ exports.handler = async function (event) {
       // If not, polling will pick it up.
       var deepLink = "com.inbal.levain://callback/?google_auth=1" +
         "&email=" + encodeURIComponent(email) +
-        "&name=" + encodeURIComponent(name);
+        "&name=" + encodeURIComponent(name) +
+        "&session=" + encodeURIComponent(session);
       return {
         statusCode: 200,
         headers: { "Content-Type": "text/html; charset=utf-8" },
@@ -170,7 +176,8 @@ exports.handler = async function (event) {
     // 4b. Web flow: redirect back with params
     var returnUrl = NETLIFY_ORIGIN + "/?google_auth=1" +
       "&email=" + encodeURIComponent(email) +
-      "&name=" + encodeURIComponent(name);
+      "&name=" + encodeURIComponent(name) +
+      "&session=" + encodeURIComponent(session);
     return { statusCode: 302, headers: { Location: returnUrl }, body: "" };
 
   } catch (err) {

@@ -19,6 +19,6 @@
   status = 200
 
 [[redirects]]
-  from = "/api/auth-result"
-  to = "/.netlify/functions/authresult"
+  from = "/api/account"
+  to = "/.netlify/functions/account"
   status = 200

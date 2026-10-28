@@ -1,5 +1,8 @@
 // Netlify serverless function — CRUD for user recipes stored in Airtable.
 // Actions: "list", "save", "delete"
+// The user is identified only by the signed session token (Authorization: Bearer ...).
+
+var sessionFromEvent = require("../lib/session").sessionFromEvent;
 
 function airtableUrl(base, table, recordId) {
   var url = "https://api.airtable.com/v0/" + base + "/" + encodeURIComponent(table);
@@ -19,7 +22,7 @@ function corsHeaders(event) {
   return {
     "Access-Control-Allow-Origin": origin,
     "Access-Control-Allow-Methods": "POST, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
     "Access-Control-Allow-Credentials": "true"
   };
 }
@@ -46,16 +49,19 @@ exports.handler = async function (event) {
     return respond(500, { error: "Server misconfigured" });
   }
 
+  var session;
+  try { session = sessionFromEvent(event); }
+  catch (e) { console.error(e.message); return respond(500, { error: "Server misconfigured" }); }
+  if (!session) {
+    return respond(401, { error: "UNAUTHORIZED" });
+  }
+  var userEmail = session.email;
+
   var body;
   try { body = JSON.parse(event.body); }
   catch (e) { return respond(400, { error: "Invalid JSON" }); }
 
   var action = body.action;
-  var userEmail = (body.userEmail || "").trim().toLowerCase();
-
-  if (!userEmail) {
-    return respond(400, { error: "EMAIL_REQUIRED" });
-  }
 
   try {
 
@@ -151,7 +157,7 @@ exports.handler = async function (event) {
     // ========================
     if (action === "delete") {
       var recordId = body.recordId;
-      if (!recordId) {
+      if (!recordId || !/^rec[a-zA-Z0-9]{14}$/.test(recordId)) {
         return respond(400, { error: "RECORD_ID_REQUIRED" });
       }
 
