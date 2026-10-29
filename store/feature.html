@@ -1,0 +1,39 @@
+<!doctype html>
+<!-- Google Play feature graphic, 1024×500. Rendered by store/feature.mjs.  ?lang=he|en -->
+<html><head><meta charset="utf-8" /><title>feature</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 1024px; height: 500px; overflow: hidden; font-family: Heebo, system-ui, sans-serif; }
+  body { position: relative; background: radial-gradient(90% 120% at 20% 10%, #6B5446 0%, #3B2F2A 65%); color: #FAF7F2; }
+  .text { position: absolute; top: 0; bottom: 0; width: 560px; display: flex; flex-direction: column; justify-content: center; }
+  .brand { font-size: 96px; font-weight: 800; letter-spacing: .04em; line-height: 1; }
+  .tag { margin-top: 18px; font-size: 38px; font-weight: 600; color: #E2B58F; line-height: 1.2; }
+  .sub { margin-top: 14px; font-size: 24px; color: #D9CBBE; }
+  .art { position: absolute; top: 50%; transform: translateY(-50%); width: 360px; height: 360px; }
+  [dir="rtl"] .text { right: 64px; text-align: right; }  [dir="rtl"] .art { left: 70px; }
+  [dir="ltr"] .text { left: 64px; }                       [dir="ltr"] .art { right: 70px; }
+</style></head>
+<body>
+<div class="text"><div class="brand">Levain</div><div class="tag" id="tag"></div><div class="sub" id="sub"></div></div>
+<svg class="art" viewBox="0 0 200 200" aria-hidden="true">
+  <ellipse cx="100" cy="182" rx="80" ry="10" fill="#2a211d" opacity=".6"/>
+  <!-- loaf -->
+  <path d="M18 150c0-34 30-56 66-56s66 22 66 56c0 14-12 22-26 22H44c-14 0-26-8-26-22z" fill="#C1896B"/>
+  <path d="M30 148c4-24 26-40 54-40" stroke="#E8C29E" stroke-width="6" fill="none" stroke-linecap="round"/>
+  <path d="M60 118c10 6 22 8 34 4M70 136c12 6 26 6 38 0" stroke="#8E5A3E" stroke-width="5" fill="none" stroke-linecap="round"/>
+  <!-- jar of starter -->
+  <rect x="122" y="40" width="58" height="13" rx="4" fill="#A06B4D"/>
+  <path d="M120 54h62v100a12 12 0 0 1-12 12h-38a12 12 0 0 1-12-12z" fill="#F8F4EE" stroke="#CFC3B4" stroke-width="2.5"/>
+  <path d="M122 92c9-5 17 4 30-1s20 3 28-1v62a10 10 0 0 1-10 10h-38a10 10 0 0 1-10-10z" fill="#EAD9BF"/>
+  <g fill="#FBF6EC" stroke="#D8C3A3" stroke-width="1.2"><circle cx="134" cy="112" r="4"/><circle cx="150" cy="128" r="3"/><circle cx="168" cy="108" r="4.5"/><circle cx="142" cy="146" r="3.5"/><circle cx="170" cy="140" r="3"/></g>
+  <path d="M120 78h62" stroke="#6B8F71" stroke-width="2.5" stroke-dasharray="5 4"/>
+</svg>
+<script>
+const T = { he: ["העוזרת האישית לאפיית מחמצת", "האכלות, טיימרים ומתכונים במקום אחד"],
+            en: ["Your personal sourdough assistant", "Feedings, timers and recipes in one place"] };
+const lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "he";
+document.body.dir = lang === "he" ? "rtl" : "ltr";
+document.getElementById("tag").textContent = T[lang][0];
+document.getElementById("sub").textContent = T[lang][1];
+</script>
+</body></html>
