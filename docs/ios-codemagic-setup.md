@@ -7,7 +7,9 @@
 1. להירשם ל-Apple Developer Program **כארגון** (Uniqops Technologies). צריך מספר D-U-N-S.
 2. ב-[Certificates, Identifiers & Profiles](https://developer.apple.com/account/resources/identifiers/list) → Identifiers → **+** → App IDs → App:
    - Bundle ID (Explicit): `com.inbal.levain`
-   - Capabilities: לא צריך שום דבר מיוחד
+   - Capabilities: **Sign In with Apple** (חובה, האפליקציה משתמשת בו)
+3. Keys → **+** → `Levain Sign in with Apple`, לסמן Sign in with Apple → Configure → `com.inbal.levain`.
+   להוריד את ה-`.p8` (פעם אחת בלבד) ולרשום Key ID ו-Team ID
 
 ## 2. App Store Connect: יצירת האפליקציה
 1. [App Store Connect](https://appstoreconnect.apple.com) → Apps → **+** → New App
@@ -22,12 +24,22 @@
 
 ## 4. Codemagic
 1. להירשם ל-[codemagic.io](https://codemagic.io) עם GitHub ולהוסיף את הריפו `sourdough-app`
-2. Team settings → Integrations → **Developer Portal** → Connect:
+(בלי Team: הכול בחשבון האישי, שם נמצאות 500 הדקות החינמיות)
+2. Personal Account → Settings → Integrations → **Developer Portal** → Connect:
    - Key name: `Levain ASC Key` (חייב להיות זהה לשם ב-`codemagic.yaml`)
    - להזין Issuer ID ו-Key ID ולהעלות את קובץ ה-`.p8`
-3. Code signing identities → iOS certificates → **Generate certificate** (Apple Distribution), ולשמור את הסיסמה
-4. Code signing identities → iOS provisioning profiles → **Fetch profiles** → לבחור App Store profile ל-`com.inbal.levain`
+3. Personal Account → Settings → codemagic.yaml settings → Code signing identities → iOS certificates → **Generate certificate** (Apple Distribution), ולשמור את הסיסמה
+4. (לא חובה) Code signing identities → iOS provisioning profiles → **Fetch profiles** → לבחור App Store profile ל-`com.inbal.levain`
    (אם עוד אין פרופיל: אפשר ליצור אותו ב-Apple Developer → Profiles → App Store Connect)
+
+## 4.5 Sign in with Apple בשרת (Netlify + Airtable)
+הקוד: `plugins/apple-sign-in` (פלאגין נייטיב שלנו, כי הפלאגין הקהילתי לא תומך ב-Capacitor 8),
+`netlify/functions/apple-auth.js`, `netlify/lib/apple.js`, וביטול ההתחברות של Apple במחיקת חשבון (`account.js`).
+1. Airtable → טבלת **Users** → להוסיף עמודה `AppleRefreshToken` מסוג **Long text**
+   (בלעדיה ההתחברות עובדת, אבל מחיקת חשבון לא תבטל את ההתחברות מול Apple, וזו דרישה של אפל)
+2. Netlify → Site configuration → Environment variables:
+   `APPLE_TEAM_ID`, `APPLE_KEY_ID`, `APPLE_PRIVATE_KEY` (כל התוכן של ה-`.p8`, כ-secret), `APPLE_BUNDLE_ID` = `com.inbal.levain`
+3. Trigger deploy (הפרסום האוטומטי נעול באתר הזה)
 
 ## 5. הרצת בילד
 - **ידנית:** ב-Codemagic → Start new build → בוחרים branch ו-workflow `iOS → TestFlight`
@@ -39,10 +51,10 @@
 
 ## 6. בדיקה על אייפון
 - App Store Connect → TestFlight → Internal Testing → להוסיף את עצמך → להתקין את TestFlight באייפון
-- **לבדוק במיוחד:** התחברות עם Google (נפתח דפדפן, ואחרי האישור צריך לחזור לאפליקציה), שמירת מתכונים, ותצוגה בעברית (RTL)
+- **לבדוק במיוחד:** התחברות עם Apple, התחברות עם Google (נפתח דפדפן, ואחרי האישור צריך לחזור לאפליקציה), שמירת מתכונים, ותצוגה בעברית (RTL)
 
 ## 7. לפני שליחה לביקורת של אפל (חשוב!)
-- **Sign in with Apple (סעיף 4.8):** אפליקציה שמחייבת התחברות עם Google חייבת להציע גם Sign in with Apple, או לא לחייב התחברות בכלל
+- **Sign in with Apple (סעיף 4.8):** בנוי. הכפתור מופיע רק באפליקציית iOS
 - **מחיקת חשבון (סעיף 5.1.1(v)):** אם יש התחברות, חייבת להיות אפשרות למחוק את החשבון מתוך האפליקציה
 - מדיניות פרטיות: `privacy.html` כבר קיים, ומעלים את הכתובת שלו ל-App Store Connect
 - צילומי מסך: 6.9" (1320×2868), לפחות 3. אפשר לצלם מ-TestFlight על אייפון, או ב-Chrome DevTools במצב מובייל

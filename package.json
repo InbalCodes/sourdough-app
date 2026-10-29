@@ -21,7 +21,8 @@
     "@capacitor/browser": "^8.0.3",
     "@capacitor/cli": "^8.4.0",
     "@capacitor/core": "^8.4.0",
-    "@capacitor/ios": "^8.4.0"
+    "@capacitor/ios": "^8.4.0",
+    "levain-apple-sign-in": "file:plugins/apple-sign-in"
   },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5"

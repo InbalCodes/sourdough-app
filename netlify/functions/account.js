@@ -3,6 +3,7 @@
 // Permanently deletes the user's recipes, user record and pending sign-ins.
 
 var sessionFromEvent = require("../lib/session").sessionFromEvent;
+var apple = require("../lib/apple");
 
 function airtableUrl(base, table, recordId) {
   var url = "https://api.airtable.com/v0/" + base + "/" + encodeURIComponent(table);
@@ -36,6 +37,19 @@ async function findRecordIds(base, token, table, field, value) {
     offset = data.offset || "";
   } while (offset);
   return ids;
+}
+
+/** Revoke the Apple sign-in of every Users record with this email (Apple requires it on deletion). */
+async function revokeAppleTokens(base, token, email) {
+  var url = airtableUrl(base, "Users") + "?filterByFormula=" +
+    encodeURIComponent('{Email}="' + email.replace(/"/g, '\\"') + '"');
+  var res = await fetch(url, { headers: { Authorization: "Bearer " + token } });
+  if (!res.ok) throw new Error("Airtable lookup failed for Users: " + res.status);
+  var records = (await res.json()).records || [];
+  for (var i = 0; i < records.length; i++) {
+    var refreshToken = records[i].fields.AppleRefreshToken;
+    if (refreshToken) await apple.revokeToken(refreshToken);
+  }
 }
 
 /** Delete records in batches of 10 (Airtable's limit per request). */
@@ -76,6 +90,9 @@ exports.handler = async function (event) {
 
   try {
     var email = session.email;
+    // Best-effort: a failed revoke is logged but must not block deleting the user's data.
+    try { await revokeAppleTokens(AB, AT, email); }
+    catch (e) { console.error("Apple revoke error:", e.message); }
     await deleteRecords(AB, AT, "Recipes", await findRecordIds(AB, AT, "Recipes", "UserEmail", email));
     await deleteRecords(AB, AT, "PendingAuth", await findRecordIds(AB, AT, "PendingAuth", "Email", email));
     await deleteRecords(AB, AT, "Users", await findRecordIds(AB, AT, "Users", "Email", email));

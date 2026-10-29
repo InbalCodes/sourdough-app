@@ -1,0 +1,11 @@
+{
+  "name": "levain-apple-sign-in",
+  "version": "1.0.0",
+  "description": "Sign in with Apple for Levain (iOS only, Capacitor 8, Swift Package Manager)",
+  "private": true,
+  "license": "ISC",
+  "files": ["ios/Sources", "Package.swift"],
+  "capacitor": {
+    "ios": { "src": "ios" }
+  }
+}

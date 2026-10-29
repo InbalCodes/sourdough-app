@@ -22,3 +22,8 @@
   from = "/api/account"
   to = "/.netlify/functions/account"
   status = 200
+
+[[redirects]]
+  from = "/api/apple-auth"
+  to = "/.netlify/functions/apple-auth"
+  status = 200

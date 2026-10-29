@@ -21,7 +21,7 @@ workflows:
         XCODE_PROJECT: ios/App/App.xcodeproj
         XCODE_SCHEME: App
         # Numeric "Apple ID" of the app, from App Store Connect → App Information
-        APP_STORE_APPLE_ID: "0000000000"
+        APP_STORE_APPLE_ID: "6828526036"
 
     triggering:
       events:

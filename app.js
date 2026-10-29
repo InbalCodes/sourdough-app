@@ -32,6 +32,7 @@
       loginSubtitle: "העוזר האישי שלך לאפייה שקטה",
       googleSignInBtn: "התחברות באמצעות Google",
       googleSignInLoading: "מתחבר...",
+      appleSignInBtn: "התחברות עם Apple",
       errGoogleCancelled: "ההתחברות בוטלה",
       errGeneric: "משהו השתבש. נסו שנית.",
 
@@ -236,6 +237,7 @@
       loginSubtitle: "Your personal quiet baking assistant",
       googleSignInBtn: "Sign in with Google",
       googleSignInLoading: "Signing in...",
+      appleSignInBtn: "Sign in with Apple",
       errGoogleCancelled: "Sign-in was cancelled",
       errGeneric: "Something went wrong. Please try again.",
 
@@ -881,6 +883,56 @@
     startGoogleOAuth();
   });
 
+  // Sign in with Apple — iOS app only (App Store guideline 4.8 requires it next to Google).
+  // Native plugin: plugins/apple-sign-in. Server: netlify/functions/apple-auth.js
+  var isIOS = isNative && Cap && typeof Cap.getPlatform === "function" && Cap.getPlatform() === "ios";
+  var CapAppleSignIn = isIOS && Cap.registerPlugin ? Cap.registerPlugin("LevainAppleSignIn") : null;
+
+  function resetAppleButton() {
+    var btn = $("btn-apple-signin");
+    btn.querySelector("span").textContent = t("appleSignInBtn");
+    btn.disabled = false;
+  }
+
+  if (CapAppleSignIn) {
+    $("btn-apple-signin").classList.remove("hidden");
+    $("btn-apple-signin").addEventListener("click", function () {
+      hideAuthError();
+      stopPolling();
+      var btn = $("btn-apple-signin");
+      btn.querySelector("span").textContent = t("googleSignInLoading");
+      btn.disabled = true;
+
+      var nonce = generateToken();
+      CapAppleSignIn.authorize({ nonce: nonce })
+        .then(function (res) {
+          return fetch(NETLIFY_ORIGIN + "/api/apple-auth", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              identityToken: res.identityToken,
+              authorizationCode: res.authorizationCode,
+              nonce: nonce,
+              givenName: res.givenName || "",
+              familyName: res.familyName || ""
+            })
+          }).then(function (r) {
+            return r.json().then(function (data) { return { ok: r.ok, data: data }; });
+          });
+        })
+        .then(function (r) {
+          if (!r.ok || !r.data.success) throw new Error(r.data.error || "APPLE_SIGNIN_FAILED");
+          resetAppleButton();
+          completeLogin(r.data.email, r.data.name || "", r.data.session || "");
+        })
+        .catch(function (err) {
+          console.error("[Levain] Apple sign-in failed:", err && (err.code || err.message));
+          resetAppleButton();
+          showAuthError(t(err && err.code === "CANCELED" ? "errGoogleCancelled" : "errGeneric"));
+        });
+    });
+  }
+
   $("btn-logout").addEventListener("click", function () {
     stopPolling();
     currentPollToken = null;
@@ -889,6 +941,7 @@
     var btn = $("btn-google-signin");
     btn.querySelector("span").textContent = t("googleSignInBtn");
     btn.disabled = false;
+    resetAppleButton();
     showLogin();
   });
 

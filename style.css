@@ -160,6 +160,26 @@ input, select, textarea {
   flex-shrink: 0;
 }
 
+.btn-apple {
+  background: #000;
+  border-color: #000;
+  color: #fff;
+  margin-top: 12px;
+}
+
+.btn-apple:hover {
+  border-color: #000;
+}
+
+.btn-apple .apple-logo {
+  flex-shrink: 0;
+  margin-top: -2px;
+}
+
+.btn-apple.hidden {
+  display: none;
+}
+
 .auth-error {
   font-size: 0.82rem;
   color: var(--danger);
