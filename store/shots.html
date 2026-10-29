@@ -1,0 +1,137 @@
+<!doctype html>
+<!-- One App Store screenshot: a headline over the real app (index.html loaded with demo data).
+     Rendered by store/shots.mjs with headless Edge at 440×956 CSS px × 3 = 1320×2868 (iPhone 6.9").
+     Preview: npx serve -l 3000 .  then  http://localhost:3000/store/shots.html?shot=1&lang=he -->
+<html><head><meta charset="utf-8" /><title>store shot</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  body { position: relative; }
+  html, body { margin: 0; width: 440px; height: 956px; overflow: hidden; background: #3B2F2A; font-family: Heebo, system-ui, sans-serif; }
+  .bg { position: absolute; inset: 0; background: radial-gradient(120% 65% at 50% 0%, #6B5446 0%, #3B2F2A 60%); }
+  .cap { position: absolute; top: 46px; left: 28px; right: 28px; text-align: center; color: #FAF7F2; }
+  .cap h1 { margin: 0; text-wrap: balance; overflow-wrap: break-word; font-size: 36px; line-height: 1.12; font-weight: 800; }
+  .cap h1 em { font-style: normal; color: #E2B58F; }
+  .cap p { margin: 10px 0 0; font-size: 18px; color: #D9CBBE; line-height: 1.3; }
+  .phone { position: absolute; left: 50%; top: 196px; width: 344px; height: 732px; transform: translateX(-50%);
+           border-radius: 46px; background: #1d1714; padding: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 0 0 2px #4a3d36; }
+  .screen { width: 100%; height: 100%; border-radius: 37px; overflow: hidden; position: relative; background: #FAF7F2; }
+  /* the app is laid out at 393×813 (an iPhone), then scaled to fit the frame */
+  .screen { direction: ltr; }
+  iframe { position: absolute; left: 0; top: 0; border: 0; width: 393px; height: 836px; transform: scale(0.87532); /* 344 / 393 */ transform-origin: 0 0; }
+</style></head>
+<body>
+<div class="bg"></div>
+<div class="cap"><h1 id="h"></h1><p id="p"></p></div>
+<div class="phone"><div class="screen"><iframe id="f"></iframe></div></div>
+<script>
+const T = {
+  he: [["כל שלב באפייה, *בזמן*", "טיימרים לקיפולים, להתפחה ולמקרר"],
+       ["המחמצת *תמיד מוזנת*", "מעקב האכלות לכל המחמצות שלך"],
+       ["כמויות *מדויקות*", "מחשבון האכלה לפי יחס ומספר לחמים"],
+       ["*ספר המתכונים* שלך", "אחוזי אופה, שמורים ומסונכרנים"],
+       ["לו״ז *שמתאים לך*", "בוחרים תוכנית, ו-Levain מתזמנת את השאר"]],
+  en: [["Every step, *on time*", "Timers for folds, proofing and the fridge"],
+       ["Your starter, *always fed*", "Track feedings for every starter"],
+       ["*Exact* amounts", "A feeding calculator by ratio and loaves"],
+       ["Your *recipe book*", "Baker's percentages, saved and synced"],
+       ["A schedule that *fits your day*", "Pick a plan, Levain times the rest"]],
+};
+const q = new URLSearchParams(location.search);
+const shot = Math.max(1, Math.min(5, +(q.get("shot") || 1))), lang = q.get("lang") === "en" ? "en" : "he";
+const [h, p] = T[lang][shot - 1];
+document.documentElement.lang = lang; document.querySelector(".cap").dir = lang === "he" ? "rtl" : "ltr";
+document.getElementById("h").innerHTML = h.replace(/\*(.+?)\*/g, "<em>$1</em>");
+document.getElementById("p").textContent = p;
+
+// --- demo data, written into the app's localStorage before app.js runs
+const H = 3600000, now = Date.now(), iso = (msAgo) => new Date(now - msAgo).toISOString();
+const NAMES = { he: ["בועות", "שיפון"], en: ["Bubbles", "Rye Rosie"] }[lang];
+const RECIPES = {
+  he: [
+    { id: "r1", name: "כפרי קלאסי", flour: 1000, hydration: 75, salt: 2, starter: 20, flourTypes: [{ name: "לבן", grams: 800 }, { name: "מלא", grams: 200 }] },
+    { id: "r2", name: "כוסמין ביתי", flour: 500, hydration: 70, salt: 2, starter: 25 },
+    { id: "r3", name: "בגט של שישי", flour: 750, hydration: 72, salt: 2.2, starter: 15 },
+  ],
+  en: [
+    { id: "r1", name: "Classic Country Loaf", flour: 1000, hydration: 75, salt: 2, starter: 20, flourTypes: [{ name: "Bread flour", grams: 800 }, { name: "Whole wheat", grams: 200 }] },
+    { id: "r2", name: "Spelt Sandwich", flour: 500, hydration: 70, salt: 2, starter: 25 },
+    { id: "r3", name: "Weekend Baguettes", flour: 750, hydration: 72, salt: 2.2, starter: 15 },
+  ],
+}[lang];
+const bakeActive = shot === 1;
+// A drawn jar of bubbly starter, shown as the starter's photo
+const JAR = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<rect width="200" height="200" fill="#EFE4D6"/><ellipse cx="100" cy="178" rx="62" ry="10" fill="#D9C7B3"/>
+<rect x="52" y="34" width="96" height="20" rx="6" fill="#A06B4D"/>
+<path d="M50 56h100v104a18 18 0 0 1-18 18H68a18 18 0 0 1-18-18z" fill="#F8F4EE" stroke="#CFC3B4" stroke-width="3"/>
+<path d="M53 96c14-8 26 6 47-2s32 4 47-2v66a15 15 0 0 1-15 15H68a15 15 0 0 1-15-15z" fill="#EAD9BF"/>
+<g fill="#FBF6EC" stroke="#D8C3A3" stroke-width="1.5"><circle cx="72" cy="120" r="6"/><circle cx="96" cy="140" r="4"/><circle cx="124" cy="116" r="7"/><circle cx="84" cy="158" r="5"/><circle cx="130" cy="150" r="4"/><circle cx="110" cy="102" r="3.5"/></g>
+<path d="M62 62v40" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/>
+<path d="M60 84h80" stroke="#6B8F71" stroke-width="3" stroke-dasharray="6 5"/></svg>`);
+const seed = {
+  levain_language: lang,
+  levain_user_email: "demo@levain.app", levain_user_name: lang === "he" ? "נועה" : "Noa", levain_session: "demo",
+  levain_starters: JSON.stringify([
+    { id: "s1", name: NAMES[0], creationDate: iso(800 * 24 * H), status: "active", lastFed: iso(3.2 * H), photo: JAR },
+    { id: "s2", name: NAMES[1], creationDate: iso(75 * 24 * H), status: "resting", lastFed: iso(30 * H) },
+  ]),
+  levain_active_starter: "s1",
+  levain_last_fed: iso(3.2 * H),
+  levain_bake_state: bakeActive ? JSON.stringify({
+    active: true, startTime: iso(6 * H), scheduleType: "worker",
+    checked: ["feed-starter", "starter-ready", "autolyse", "fold-1", "fold-2"],
+    completedAt: { "feed-starter": iso(6 * H), "starter-ready": iso(2 * H), autolyse: iso(2 * H), "fold-1": iso(1.5 * H), "fold-2": iso(0.7 * H) },
+    targetDurations: { levain: 240, autolyse: 45, cold: 720 },
+    autolyseStart: iso(2.8 * H), bulkStart: iso(2 * H), fold4Added: false,
+    foldStarts: {}, volumeStart: null, preShapeStart: null, coldStart: null, coldHours: 12,
+    bakePhase1Start: null, bakePhase2Start: null, bakePhase1Temp: 250, bakePhase1Min: 20, bakePhase2Temp: 220, bakePhase2Min: 20,
+  }) : "",
+};
+
+const inject = `<base href="/"><style>.app-footer{display:none!important}</style><script>
+(function () {
+  var seed = ${JSON.stringify(seed)};
+  localStorage.clear();
+  Object.keys(seed).forEach(function (k) { if (seed[k]) localStorage.setItem(k, seed[k]); });
+  var recipes = ${JSON.stringify(RECIPES)};
+  var realFetch = window.fetch;
+  window.fetch = function (url, opts) {
+    if (String(url).indexOf("/api/recipes") !== -1) {
+      return Promise.resolve(new Response(JSON.stringify({ success: true, recipes: recipes }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    }
+    return realFetch.apply(this, arguments);
+  };
+  window.AudioContext = undefined; window.webkitAudioContext = undefined;
+})();
+<\/script>`;
+
+// After the app has loaded: open the right tab
+const SCENES = {
+  1: (d) => { d.querySelector('[data-tab="bake"]').click(); },
+  2: () => {},
+  3: (d) => { d.querySelector('[data-sub="calc"]').click(); },
+  4: (d) => { d.querySelector('[data-tab="recipes"]').click(); },
+  5: (d) => { d.querySelector('[data-tab="bake"]').click(); },
+};
+const SCROLL = { 1: (d) => d.getElementById("bake-steps").children[3], 4: (d) => d.getElementById("recipe-list") };
+
+const f = document.getElementById("f");
+fetch("/index.html").then((r) => r.text()).then((html) => {
+  f.addEventListener("load", () => {
+    const d = f.contentDocument;
+    setTimeout(() => {
+      SCENES[shot](d);
+      setTimeout(() => {
+        const el = SCROLL[shot] && SCROLL[shot](d);
+        if (el) {
+          const panel = d.querySelector(".tab-panels");
+          panel.scrollTop += el.getBoundingClientRect().top - panel.getBoundingClientRect().top - 16;
+        }
+        document.title = "ready";
+      }, 400);
+    }, 300);
+  }, { once: true });
+  f.srcdoc = html.replace("<head>", "<head>" + inject);
+});
+</script>
+</body></html>
