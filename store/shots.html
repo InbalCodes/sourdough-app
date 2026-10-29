@@ -38,6 +38,12 @@ const T = {
 };
 const q = new URLSearchParams(location.search);
 // size=65: iPhone 6.5" (428×926 CSS px × 3 = 1284×2778); default iPhone 6.9" (440×956 × 3 = 1320×2868)
+// size=63: iPhone with Dynamic Island, medium (402×874 CSS px × 3 = 1206×2622) — the same layout zoomed down
+if (q.get("size") === "63") {
+  const st = document.createElement("style");
+  st.textContent = "html{zoom:0.91364}";
+  document.head.appendChild(st);
+}
 if (q.get("size") === "65") {
   const st = document.createElement("style");
   st.textContent = "html,body{width:428px!important;height:926px!important}.phone{height:702px!important}iframe{height:802px!important}";
