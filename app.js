@@ -886,7 +886,10 @@
   // Sign in with Apple — iOS app only (App Store guideline 4.8 requires it next to Google).
   // Native plugin: plugins/apple-sign-in. Server: netlify/functions/apple-auth.js
   var isIOS = isNative && Cap && typeof Cap.getPlatform === "function" && Cap.getPlatform() === "ios";
-  var CapAppleSignIn = isIOS && Cap.registerPlugin ? Cap.registerPlugin("LevainAppleSignIn") : null;
+  // This app loads no @capacitor/core bundle, so Cap.registerPlugin doesn't exist in the iOS app;
+  // the native bridge exposes registered plugins on Cap.Plugins instead.
+  var CapAppleSignIn = !isIOS ? null
+    : (CapPlugins.LevainAppleSignIn || (Cap.registerPlugin ? Cap.registerPlugin("LevainAppleSignIn") : null));
 
   function resetAppleButton() {
     var btn = $("btn-apple-signin");
