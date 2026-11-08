@@ -1,6 +1,7 @@
 // UI strings. English is the source; Hebrew carried over from v1. Same keys in every language.
 // More languages (fr, de, it, ja, ko, pt-BR, es-419) come later: add a table and it shows up in Settings.
 import { SK, loadRaw } from "./lib/store";
+import { formatSpan } from "./lib/time";
 
 const en = {
   appTagline: "Your quiet sourdough assistant",
@@ -17,6 +18,9 @@ const en = {
   delete: "Delete",
   g: "g",
   oz: "oz",
+  unitMin: "min",
+  unitH: "h",
+  unitD: "d",
 
   // Today
   greetingMorning: "Good morning",
@@ -179,6 +183,10 @@ const en = {
   // Settings
   language: "Language",
   units: "Units",
+  appearance: "Look",
+  themeLight: "Light",
+  themeDark: "Dark",
+  themeAuto: "Like the phone",
   grams: "Grams",
   ounces: "Ounces",
   sounds: "Chime at each bake step",
@@ -208,6 +216,9 @@ const he: Record<Key, string> = {
   delete: "מחיקה",
   g: "גרם",
   oz: "אונקיות",
+  unitMin: "דק׳",
+  unitH: "שע׳",
+  unitD: "ימים",
 
   greetingMorning: "בוקר טוב",
   greetingDay: "שלום",
@@ -361,6 +372,10 @@ const he: Record<Key, string> = {
 
   language: "שפה",
   units: "יחידות",
+  appearance: "מראה",
+  themeLight: "בהיר",
+  themeDark: "כהה",
+  themeAuto: "כמו הטלפון",
   grams: "גרמים",
   ounces: "אונקיות",
   sounds: "צליל בכל שלב באפייה",
@@ -380,10 +395,16 @@ export const LANGS: { code: string; name: string }[] = [
 ];
 const RTL = new Set(["he"]);
 
-/** Saved choice (v1 key), then `?lang=`, then the phone's language, then English. */
+/** `?lang=`, then the saved choice (v1 key), then the phone's language, then English.
+ *  v1 showed Hebrew unless you switched, without saving it: people updating from v1 keep Hebrew. */
 function pickLang(): string {
   const forced = new URLSearchParams(location.search).get("lang");
-  const saved = loadRaw(SK.language);
+  let saved = loadRaw(SK.language);
+  if (!saved && !loadRaw(SK.v2Seen) && loadRaw(SK.starters)) {
+    saved = "he";
+    try { localStorage.setItem(SK.language, saved); } catch { /* ignore */ }
+  }
+  try { localStorage.setItem(SK.v2Seen, "1"); } catch { /* ignore */ }
   const code = (forced || saved || navigator.language || "en").slice(0, 2).toLowerCase();
   return code in tables ? code : "en";
 }
@@ -403,6 +424,8 @@ export function setLang(code: string) {
   try { localStorage.setItem(SK.language, code); } catch { /* ignore */ }
   applyDir();
 }
+
+export const span = (ms: number) => formatSpan(ms, { min: t("unitMin"), h: t("unitH"), d: t("unitD") });
 
 export function t(key: Key, vars: Record<string, string | number> = {}): string {
   return (tables[lang][key] ?? en[key]).replace(/\{(\w+)\}/g, (_, v) => String(vars[v] ?? ""));

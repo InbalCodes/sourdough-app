@@ -86,29 +86,24 @@ export type Step = {
 export function buildSteps(s: BakeState): Step[] {
   const ls = LIFESTYLES[s.scheduleType];
   const start = ms(s.startTime)!;
-  const levainEnd = start + ls.levainHours * HOUR;
+  // The plan follows what really happened: the starter peaks N hours after it was actually fed,
+  // and once it's marked ready, mixing is due right away.
+  const fedAt = s.checked.includes("feed-starter") ? ms(s.completedAt["feed-starter"]) ?? start : start;
+  const levainEnd = fedAt + ls.levainHours * HOUR;
+  const readyAt = s.checked.includes("starter-ready") ? ms(s.completedAt["starter-ready"]) : null;
   const coldStart = ms(s.coldStart);
   const steps: Omit<Step, "done">[] = [
     { id: "feed-starter", kind: "plain", targetTs: start, timerRef: start },
     { id: "starter-ready", kind: "plain", targetTs: levainEnd },
     { id: "autolyse", kind: "autolyse", targetTs: levainEnd - ls.autolyseMin * MIN, parallel: true, timerRef: ms(s.autolyseStart) ?? undefined },
-    { id: "bulk", kind: "bulk", targetTs: levainEnd, timerRef: ms(s.bulkStart) ?? undefined },
+    { id: "bulk", kind: "bulk", targetTs: readyAt ?? levainEnd, timerRef: ms(s.bulkStart) ?? undefined },
     { id: "preshape", kind: "preshape", timerRef: ms(s.preShapeStart) ?? undefined },
     { id: "final-shape", kind: "plain" },
     { id: "cold", kind: "cold" },
     { id: "oven", kind: "oven", targetTs: coldStart ? coldStart + s.coldHours * HOUR - OVEN_PREHEAT_MIN * MIN : undefined },
     { id: "score-bake", kind: "bake" },
   ];
-  // Once a step is done, later planned steps count up from when it was done (v1 behavior).
-  let lastDone: number | null = null;
-  return steps.map((st) => {
-    const done = s.checked.includes(st.id);
-    const doneTs = ms(s.completedAt[st.id]) ?? undefined;
-    const out: Step = { ...st, done, doneTs };
-    if (done && doneTs) lastDone = doneTs;
-    else if (!done && lastDone && !st.timerRef && st.targetTs) out.timerRef = lastDone;
-    return out;
-  });
+  return steps.map((st) => ({ ...st, done: s.checked.includes(st.id), doneTs: ms(s.completedAt[st.id]) ?? undefined }));
 }
 
 export type Fold = { id: string; n: number; offsetMin: number; done: boolean; doneTs?: number; timerTs: number };

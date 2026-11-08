@@ -17,6 +17,7 @@ export const SK = {
   pizza: "levain_pizza",
   bakers: "levain_bakers",
   migratedRecipes: "levain_v2_recipes_imported",
+  v2Seen: "levain_v2_seen",
   // v1 sign-in, read once to import recipes, then removed
   session: "levain_session",
   userEmail: "levain_user_email",
@@ -60,4 +61,4 @@ export function remove(key: string): void {
   }
 }
 
-export type Settings = { imperial?: boolean; bakeAlerts?: boolean; feedReminder?: boolean };
+export type Settings = { imperial?: boolean; bakeAlerts?: boolean; feedReminder?: boolean; theme?: "light" | "dark" | "auto" };

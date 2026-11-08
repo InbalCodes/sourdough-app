@@ -5,7 +5,7 @@ import { bakersWeights, defaultFeedTarget, feedAmounts, inUnit, parseRatio, pizz
 import { ageMonths, markFed, newStarter, starterStatus } from "../src/lib/starters.ts";
 import { alerts, buildFolds, buildSteps, currentStep, dueAlerts, newBake, normalizeBake, toggleStep } from "../src/lib/bake.ts";
 import { mergeRecipes } from "../src/lib/recipes.ts";
-import { formatDuration } from "../src/lib/time.ts";
+import { formatDuration, formatSpan } from "../src/lib/time.ts";
 
 const T0 = Date.UTC(2026, 10, 8, 8, 0); // 8 Nov 2026 08:00 UTC
 const MIN = 60_000;
@@ -54,12 +54,14 @@ test("bake steps follow the schedule", () => {
   assert.equal(currentStep(b)!.id, "feed-starter");
 });
 
-test("after a step is done, later steps count from it", () => {
+test("the plan follows when steps were really done", () => {
   let b = newBake("worker", T0);
-  b = toggleStep(b, "feed-starter", T0 + 10 * MIN);
-  b = toggleStep(b, "starter-ready", T0 + 3 * HOUR);
+  b = toggleStep(b, "feed-starter", T0 + 2 * HOUR); // fed 2 hours late
+  assert.equal(buildSteps(b).find((s) => s.id === "starter-ready")!.targetTs, T0 + 6 * HOUR);
+  assert.equal(buildSteps(b).find((s) => s.id === "starter-ready")!.timerRef, undefined); // a countdown, not "ago"
+  b = toggleStep(b, "starter-ready", T0 + 3 * HOUR); // peaked early
   const steps = buildSteps(b);
-  assert.equal(steps.find((s) => s.id === "bulk")!.timerRef, T0 + 3 * HOUR);
+  assert.equal(steps.find((s) => s.id === "bulk")!.targetTs, T0 + 3 * HOUR);
   assert.equal(currentStep(b)!.id, "autolyse");
   b = toggleStep(b, "starter-ready", T0 + 3 * HOUR); // untick
   assert.equal(currentStep(b)!.id, "starter-ready");
@@ -110,4 +112,8 @@ test("durations", () => {
   assert.equal(formatDuration(65_000), "01:05");
   assert.equal(formatDuration(HOUR + 65_000), "1:01:05");
   assert.equal(formatDuration(26 * HOUR), "1d 02:00:00");
+  const u = { min: "min", h: "h", d: "d" };
+  assert.equal(formatSpan(71_000, u), "1 min");
+  assert.equal(formatSpan(HOUR + 11 * MIN, u), "1 h 11 min");
+  assert.equal(formatSpan(26 * HOUR, u), "1 d 2 h");
 });

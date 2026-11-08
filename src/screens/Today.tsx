@@ -1,10 +1,9 @@
 // Home: what needs doing right now (starter + the current bake step).
 import { currentStep } from "../lib/bake";
 import { markFed, starterStatus } from "../lib/starters";
-import { formatDuration } from "../lib/time";
-import { t, type Key } from "../i18n";
+import { span, t, type Key } from "../i18n";
 import type { AppState } from "../state";
-import { Card } from "../ui";
+import { Card, JarIcon } from "../ui";
 import type { Tab } from "../app";
 import { stepTiming } from "./Bake";
 
@@ -25,9 +24,9 @@ export function Today(props: { s: AppState; now: number; go: (tab: Tab, sub?: st
 
       <Card title={st.name} class="starter-today" action={<span class={"badge " + status}>{t(statusKey(status))}</span>}>
         <div class="starter-row">
-          {st.photo ? <img class="avatar" src={st.photo} alt="" /> : <span class="avatar jar" aria-hidden="true" />}
+          {st.photo ? <img class="avatar" src={st.photo} alt="" /> : <JarIcon size={56} />}
           <div>
-            <div class="big">{st.lastFed ? formatDuration(now - Date.parse(st.lastFed)) : "—"}</div>
+            <div class="big">{st.lastFed ? span(now - Date.parse(st.lastFed)) : "—"}</div>
             <div class="muted small">{st.lastFed ? t("sinceFed") : t("neverFed")}</div>
           </div>
         </div>

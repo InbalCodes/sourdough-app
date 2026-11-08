@@ -89,6 +89,24 @@ export function Rows(props: { rows: [string, string][]; total?: [string, string]
   );
 }
 
+/** A jar of bubbly starter, shown when a starter has no photo. */
+export function JarIcon(props: { size?: number }) {
+  const s = props.size ?? 56;
+  return (
+    <span class="avatar jar" style={{ width: s, height: s }} aria-hidden="true">
+      <svg viewBox="0 0 48 48" width={s * 0.62} height={s * 0.62}>
+        <rect x="15" y="6" width="18" height="5" rx="2" fill="var(--accent)" />
+        <path d="M14 12h20v24a5 5 0 0 1-5 5H19a5 5 0 0 1-5-5z" fill="var(--surface)" stroke="var(--accent)" stroke-width="2.2" stroke-linejoin="round" />
+        <path d="M15.2 23c3-1.6 5.6 1.2 8.8-.2s6-1.4 8.8.2V36a4 4 0 0 1-4 4H19.2a4 4 0 0 1-4-4z" fill="var(--accent)" opacity=".28" />
+        <circle cx="20" cy="30" r="1.6" fill="var(--accent)" />
+        <circle cx="27" cy="34" r="1.3" fill="var(--accent)" />
+        <circle cx="28.5" cy="27.5" r="1.1" fill="var(--accent)" />
+        <path d="M14 18h20" stroke="var(--green)" stroke-width="1.6" stroke-dasharray="3 2.5" />
+      </svg>
+    </span>
+  );
+}
+
 /** Resize a picked image to a small JPEG data URL (fits in localStorage). */
 export function readPhoto(file: File, size = 240): Promise<string> {
   return new Promise((resolve, reject) => {

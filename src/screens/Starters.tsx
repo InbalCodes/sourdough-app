@@ -1,9 +1,9 @@
 // Starters: pick, rename, photo, fridge/counter, delete, and the routine feeding tip.
 import { ageMonths, markFed, newStarter, starterStatus, updateStarter } from "../lib/starters";
-import { formatDate, formatDuration } from "../lib/time";
-import { locale, t } from "../i18n";
+import { formatDate } from "../lib/time";
+import { locale, span, t } from "../i18n";
 import type { AppState } from "../state";
-import { Card, readPhoto } from "../ui";
+import { Card, JarIcon, readPhoto } from "../ui";
 import { statusKey } from "./Today";
 
 function ageLabel(months: number): string {
@@ -43,7 +43,7 @@ export function Starters(props: { s: AppState; now: number; toast: (m: string) =
       <Card class="starter-card">
         <div class="starter-top">
           <label class="photo">
-            {a.photo ? <img src={a.photo} alt="" /> : <span class="avatar jar" aria-hidden="true" />}
+            {a.photo ? <img src={a.photo} alt="" /> : <JarIcon size={84} />}
             <span class="photo-label">{a.photo ? t("changePhoto") : t("addPhoto")}</span>
             <input type="file" accept="image/*" hidden onChange={async (e) => {
               const f = (e.target as HTMLInputElement).files?.[0];
@@ -68,7 +68,7 @@ export function Starters(props: { s: AppState; now: number; toast: (m: string) =
         <div class="fed-line">
           {a.lastFed ? (
             <>
-              <b class="big">{formatDuration(now - Date.parse(a.lastFed))}</b>
+              <b class="big">{span(now - Date.parse(a.lastFed))}</b>
               <span class="muted small">{t("sinceFed")} · {formatDate(Date.parse(a.lastFed), locale())}</span>
             </>
           ) : (

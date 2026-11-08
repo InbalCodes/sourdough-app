@@ -1,5 +1,6 @@
 // Settings sheet: language, units, chimes.
 import { LANGS, lang, setLang, t } from "../i18n";
+import { applyTheme, type Theme } from "../lib/theme";
 import type { AppState } from "../state";
 import { Segmented } from "../ui";
 
@@ -23,6 +24,14 @@ export function Settings(props: { s: AppState; onClose: () => void; onLang: () =
             value={s.settings.imperial ? "oz" : "g"}
             onChange={(u) => s.setSettings({ ...s.settings, imperial: u === "oz" })}
             options={[{ value: "g", label: t("grams") }, { value: "oz", label: t("ounces") }]}
+          />
+        </div>
+        <div class="field">
+          <span class="field-label">{t("appearance")}</span>
+          <Segmented<Theme>
+            value={s.settings.theme ?? "light"}
+            onChange={(theme) => { s.setSettings({ ...s.settings, theme }); applyTheme(theme); }}
+            options={[{ value: "light", label: t("themeLight") }, { value: "dark", label: t("themeDark") }, { value: "auto", label: t("themeAuto") }]}
           />
         </div>
         <label class="toggle">
