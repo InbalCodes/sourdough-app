@@ -1,10 +1,9 @@
 {
   "appId": "com.inbal.levain",
   "appName": "Levain",
-  "webDir": "www",
+  "webDir": "dist",
   "server": {
-    "androidScheme": "https",
-    "allowNavigation": ["vocal-lolly-7ebc53.netlify.app"]
+    "androidScheme": "https"
   },
   "ios": {
     "contentInset": "automatic",
@@ -16,11 +15,6 @@
   "plugins": {
     "CapacitorHttp": {
       "enabled": true
-    },
-    "GoogleAuth": {
-      "scopes": ["profile", "email"],
-      "clientId": "406720545379-6mcjpa3558e848eannfdltd4d9dljtot.apps.googleusercontent.com",
-      "androidClientId": "406720545379-j0aqab02khi9i36dq74iou2h5cf9imnt.apps.googleusercontent.com"
     }
   }
 }

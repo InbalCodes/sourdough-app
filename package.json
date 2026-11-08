@@ -1,10 +1,13 @@
 {
   "name": "levain",
-  "version": "1.0.0",
-  "description": "Levain — your personal quiet baking assistant",
-  "main": "app.js",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Levain: sourdough starter, calculators and bake timers",
   "scripts": {
-    "build": "node scripts/copy-www.js",
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "test": "node --test test/*.test.ts",
     "cap:sync": "npm run build && npx cap sync",
     "cap:open:android": "npx cap open android",
     "cap:open:ios": "npx cap open ios"
@@ -16,15 +19,17 @@
   "author": "Inbal Sertshuk",
   "license": "ISC",
   "dependencies": {
-    "@capacitor/android": "^8.4.0",
-    "@capacitor/app": "^8.1.0",
-    "@capacitor/browser": "^8.0.3",
-    "@capacitor/cli": "^8.4.0",
-    "@capacitor/core": "^8.4.0",
-    "@capacitor/ios": "^8.4.0",
-    "levain-apple-sign-in": "file:plugins/apple-sign-in"
+    "@capacitor/android": "8.5.2",
+    "@capacitor/app": "8.1.2",
+    "@capacitor/core": "8.5.2",
+    "@capacitor/ios": "8.5.2",
+    "preact": "10.29.8"
   },
   "devDependencies": {
-    "@capacitor/assets": "^3.0.5"
+    "@capacitor/assets": "^3.0.5",
+    "@capacitor/cli": "8.5.2",
+    "@preact/preset-vite": "2.10.6",
+    "typescript": "5.9.3",
+    "vite": "7.3.7"
   }
 }
