@@ -1,7 +1,14 @@
 // UI strings. English is the source; Hebrew carried over from v1. Same keys in every language.
-// More languages (fr, de, it, ja, ko, pt-BR, es-419) come later: add a table and it shows up in Settings.
+// Other languages live in src/locales/ (one file each, same keys).
 import { SK, loadRaw } from "./lib/store";
 import { formatSpan } from "./lib/time";
+import de from "./locales/de";
+import es from "./locales/es";
+import fr from "./locales/fr";
+import it from "./locales/it";
+import ja from "./locales/ja";
+import ko from "./locales/ko";
+import pt from "./locales/pt";
 
 const en = {
   appTagline: "Your quiet sourdough assistant",
@@ -12,8 +19,6 @@ const en = {
   tabRecipes: "Recipes",
   settings: "Settings",
   close: "Close",
-  yes: "Yes",
-  cancel: "Cancel",
   save: "Save",
   delete: "Delete",
   g: "g",
@@ -26,13 +31,11 @@ const en = {
   greetingMorning: "Good morning",
   greetingDay: "Hello",
   greetingEvening: "Good evening",
-  yourStarter: "Your starter",
   sinceFed: "since the last feeding",
   neverFed: "No feeding recorded yet",
   iFedIt: "I fed it",
   fedDone: "Feeding saved",
   bakeNow: "Your bake",
-  noBake: "No bake in progress",
   noBakeHint: "Pick a schedule and Levain will time every step for you.",
   startBake: "Start a bake",
   openBake: "Open the bake",
@@ -190,11 +193,6 @@ const en = {
   grams: "Grams",
   ounces: "Ounces",
   sounds: "Chime at each bake step",
-  backup: "Backup",
-  exportData: "Save a backup file",
-  importData: "Restore from a backup file",
-  importDone: "Backup restored",
-  importFailed: "That file isn't a Levain backup",
   privacy: "Privacy policy",
   version: "Version {v}",
 };
@@ -210,8 +208,6 @@ const he: Record<Key, string> = {
   tabRecipes: "מתכונים",
   settings: "הגדרות",
   close: "סגירה",
-  yes: "כן",
-  cancel: "ביטול",
   save: "שמירה",
   delete: "מחיקה",
   g: "גרם",
@@ -223,13 +219,11 @@ const he: Record<Key, string> = {
   greetingMorning: "בוקר טוב",
   greetingDay: "שלום",
   greetingEvening: "ערב טוב",
-  yourStarter: "המחמצת שלך",
   sinceFed: "מאז ההאכלה האחרונה",
   neverFed: "עוד לא נרשמה האכלה",
   iFedIt: "האכלתי",
   fedDone: "ההאכלה נשמרה",
   bakeNow: "האפייה שלך",
-  noBake: "אין אפייה פעילה",
   noBakeHint: "בוחרים לו\"ז, ו-Levain מתזמנת כל שלב בשבילך.",
   startBake: "להתחיל אפייה",
   openBake: "לאפייה",
@@ -379,19 +373,22 @@ const he: Record<Key, string> = {
   grams: "גרמים",
   ounces: "אונקיות",
   sounds: "צליל בכל שלב באפייה",
-  backup: "גיבוי",
-  exportData: "שמירת קובץ גיבוי",
-  importData: "שחזור מקובץ גיבוי",
-  importDone: "הגיבוי שוחזר",
-  importFailed: "הקובץ הזה הוא לא גיבוי של Levain",
   privacy: "מדיניות פרטיות",
   version: "גרסה {v}",
 };
 
-const tables: Record<string, Record<Key, string>> = { en, he };
-export const LANGS: { code: string; name: string }[] = [
-  { code: "en", name: "English" },
-  { code: "he", name: "עברית" },
+const tables: Record<string, Record<Key, string>> = { en, fr, de, it, ja, ko, pt, es, he };
+// Same order as the store's language list (Play Console), then Hebrew.
+export const LANGS: { code: string; name: string; locale: string }[] = [
+  { code: "en", name: "English", locale: "en-US" },
+  { code: "fr", name: "Français", locale: "fr-FR" },
+  { code: "de", name: "Deutsch", locale: "de-DE" },
+  { code: "it", name: "Italiano", locale: "it-IT" },
+  { code: "ja", name: "日本語", locale: "ja-JP" },
+  { code: "ko", name: "한국어", locale: "ko-KR" },
+  { code: "pt", name: "Português", locale: "pt-BR" },
+  { code: "es", name: "Español", locale: "es-419" },
+  { code: "he", name: "עברית", locale: "he-IL" },
 ];
 const RTL = new Set(["he"]);
 
@@ -405,12 +402,13 @@ function pickLang(): string {
     try { localStorage.setItem(SK.language, saved); } catch { /* ignore */ }
   }
   try { localStorage.setItem(SK.v2Seen, "1"); } catch { /* ignore */ }
-  const code = (forced || saved || navigator.language || "en").slice(0, 2).toLowerCase();
+  let code = (forced || saved || navigator.language || "en").slice(0, 2).toLowerCase();
+  if (code === "iw") code = "he"; // older Android name for Hebrew
   return code in tables ? code : "en";
 }
 
 export let lang = pickLang();
-export const locale = () => (lang === "he" ? "he-IL" : lang);
+export const locale = () => LANGS.find((l) => l.code === lang)?.locale ?? "en-US";
 
 function applyDir() {
   document.documentElement.lang = lang;

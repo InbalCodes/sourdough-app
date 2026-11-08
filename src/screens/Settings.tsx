@@ -16,7 +16,13 @@ export function Settings(props: { s: AppState; onClose: () => void; onLang: () =
 
         <div class="field">
           <span class="field-label">{t("language")}</span>
-          <Segmented value={lang} onChange={(c) => { setLang(c); props.onLang(); }} options={LANGS.map((l) => ({ value: l.code, label: l.name }))} />
+          <div class="chips-select">
+            {LANGS.map((l) => (
+              <button type="button" lang={l.code} class={l.code === lang ? "on" : ""} aria-pressed={l.code === lang} onClick={() => { setLang(l.code); props.onLang(); }}>
+                {l.name}
+              </button>
+            ))}
+          </div>
         </div>
         <div class="field">
           <span class="field-label">{t("units")}</span>
