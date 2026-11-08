@@ -2,7 +2,11 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { dueAlerts } from "./lib/bake";
 import { playChime } from "./lib/chime";
+import { Paywall } from "./components/Paywall";
+import type { CheckKind } from "./lib/check";
 import { scheduleBake } from "./lib/notify";
+import { isPro, onProChange } from "./lib/subscription";
+import { Check } from "./screens/Check";
 import { importV1Recipes, loadRecipes } from "./lib/recipes";
 import { t, type Key } from "./i18n";
 import { useAppState } from "./state";
@@ -33,6 +37,14 @@ export function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
   const [, rerender] = useState(0);
+  // Pro: checked at start and whenever RevenueCat reports a change.
+  const [pro, setPro] = useState(false);
+  const [paywall, setPaywall] = useState(false);
+  const [checkKind, setCheckKind] = useState<CheckKind | null>(null);
+  useEffect(() => {
+    void isPro().then(setPro);
+    void onProChange(setPro);
+  }, []);
   const fired = useRef(new Set<string>());
   const toastTimer = useRef<number>();
 
@@ -68,8 +80,14 @@ export function App() {
     });
   }, []);
 
+  const openCheck = (k: CheckKind) => {
+    setCheckKind(k);
+    window.scrollTo(0, 0);
+  };
+
   const go = (to: Tab, sub?: string) => {
     if (to === "calc" && sub) setCalc(sub as CalcTab);
+    setCheckKind(null);
     setTab(to);
     window.scrollTo(0, 0);
   };
@@ -87,11 +105,17 @@ export function App() {
       </header>
 
       <main>
-        {tab === "today" && <Today s={s} now={now} go={go} toast={showToast} />}
-        {tab === "starters" && <Starters s={s} now={now} toast={showToast} />}
-        {tab === "bake" && <Bake s={s} now={now} />}
+        {checkKind ? (
+          <Check kind={checkKind} setKind={setCheckKind} pro={pro} onNeedPro={() => setPaywall(true)} onClose={() => setCheckKind(null)} />
+        ) : (
+          <>
+        {tab === "today" && <Today s={s} now={now} go={go} toast={showToast} onCheck={openCheck} />}
+        {tab === "starters" && <Starters s={s} now={now} toast={showToast} onCheck={() => openCheck("starter")} />}
+        {tab === "bake" && <Bake s={s} now={now} pro={pro} onNeedPro={() => setPaywall(true)} />}
         {tab === "calc" && <Calculators s={s} sub={calc} setSub={setCalc} toast={showToast} draft={draft} clearDraft={() => setDraft(null)} />}
         {tab === "recipes" && <Recipes s={s} openInCalc={(d) => { setDraft(d); go("calc", "bakers"); }} bakeThis={() => go("bake")} />}
+          </>
+        )}
       </main>
 
       <nav class="tabbar" role="tablist">
@@ -103,7 +127,13 @@ export function App() {
         ))}
       </nav>
 
-      {settingsOpen && <Settings s={s} onClose={() => setSettingsOpen(false)} onLang={() => rerender((n) => n + 1)} />}
+      {settingsOpen && <Settings s={s} pro={pro} onUpgrade={() => { setSettingsOpen(false); setPaywall(true); }} onClose={() => setSettingsOpen(false)} onLang={() => rerender((n) => n + 1)} />}
+      {paywall && (
+        <Paywall
+          onClose={() => setPaywall(false)}
+          onUnlocked={() => { setPro(true); setPaywall(false); showToast(t("proActive")); }}
+        />
+      )}
       {toast && <div class="toast" role="status">{toast}</div>}
     </div>
   );

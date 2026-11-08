@@ -1,11 +1,11 @@
 // Bake tracker: choose a schedule, then tick off steps with timers.
 import { useEffect, useState } from "preact/hooks";
 import { askPermission, exactAllowed, openExactSetting, permissionState } from "../lib/notify";
-import { buildFolds, buildSteps, coldEnd, LIFESTYLES, newBake, phaseEnds, toggleStep, type BakeState, type ScheduleType, type Step } from "../lib/bake";
+import { buildFolds, buildSteps, coldEnd, LIFESTYLES, newBake, phaseEnds, planBackward, toggleStep, type BakeState, type ScheduleType, type Step } from "../lib/bake";
 import { formatDuration, formatTime } from "../lib/time";
 import { locale, t, type Key } from "../i18n";
 import type { AppState } from "../state";
-import { Card, weight } from "../ui";
+import { Card, Segmented, weight } from "../ui";
 
 const stepKey = (id: string, suffix = "") => `step_${id.replace(/-/g, "_")}${suffix}` as Key;
 
@@ -17,7 +17,7 @@ export function stepTiming(step: Step, now: number): string {
   return d >= 0 ? t("ago", { t: formatDuration(d) }) : t("in", { t: formatDuration(-d) });
 }
 
-export function Bake(props: { s: AppState; now: number }) {
+export function Bake(props: { s: AppState; now: number; pro: boolean; onNeedPro: () => void }) {
   const { s, now } = props;
   const b = s.bake;
   // Can we notify, and on time? Checked on open and when coming back from the phone's settings.
@@ -43,8 +43,11 @@ export function Bake(props: { s: AppState; now: number }) {
   if (!b) {
     return (
       <ChooseSchedule
-        onPick={(type) => {
-          const nb = newBake(type, Date.now());
+        pro={props.pro}
+        onNeedPro={props.onNeedPro}
+        now={now}
+        onPick={(type, startAt, coldHours) => {
+          const nb = { ...newBake(type, startAt ?? Date.now()), ...(coldHours ? { coldHours } : {}) };
           s.setBake(nb);
           void allow(nb);
         }}
@@ -61,7 +64,11 @@ export function Bake(props: { s: AppState; now: number }) {
     <div class="screen">
       <header class="screen-head">
         <h1>{t(`sched${cap(b.scheduleType)}` as Key)}</h1>
-        <p class="muted">{t("started", { t: formatTime(Date.parse(b.startTime), locale()) })}</p>
+        <p class="muted">
+          {Date.parse(b.startTime) > now
+            ? t("planWaiting", { t: new Date(Date.parse(b.startTime)).toLocaleString(locale(), { weekday: "short", hour: "2-digit", minute: "2-digit" }) })
+            : t("started", { t: formatTime(Date.parse(b.startTime), locale()) })}
+        </p>
       </header>
 
       {s.settings.bakeAlerts !== false && perm === "ask" && (
@@ -151,7 +158,7 @@ function stepDesc(st: Step, b: BakeState): string {
   return t(stepKey(st.id, "_desc"));
 }
 
-function ChooseSchedule(props: { onPick: (t: ScheduleType) => void }) {
+function ChooseSchedule(props: { onPick: (t: ScheduleType, startAt?: number, coldHours?: number) => void; pro: boolean; onNeedPro: () => void; now: number }) {
   const types: ScheduleType[] = ["worker", "thursday", "techie"];
   return (
     <div class="screen">
@@ -166,8 +173,70 @@ function ChooseSchedule(props: { onPick: (t: ScheduleType) => void }) {
           <span class="muted small">{LIFESTYLES[ty].levainHours}h · {LIFESTYLES[ty].coldHours}h ❄</span>
         </button>
       ))}
+      <Planner {...props} />
     </div>
   );
+}
+
+/** "Bread ready at …": works out when to feed the starter (Pro). */
+function Planner(props: { onPick: (t: ScheduleType, startAt?: number, coldHours?: number) => void; pro: boolean; onNeedPro: () => void; now: number }) {
+  const [open, setOpen] = useState(false);
+  const [type, setType] = useState<ScheduleType>("worker");
+  const [cold, setCold] = useState(LIFESTYLES.worker.coldHours);
+  const [ready, setReady] = useState(() => {
+    // The first 10:00 that leaves time for the whole schedule (often the day after tomorrow).
+    const d = new Date(props.now);
+    d.setHours(10, 0, 0, 0);
+    while (planBackward("worker", d.getTime())[0].ts < props.now) d.setDate(d.getDate() + 1);
+    return toLocalInput(d.getTime());
+  });
+  const readyTs = new Date(ready).getTime();
+  const plan = Number.isFinite(readyTs) ? planBackward(type, readyTs, cold) : [];
+  const feed = plan[0]?.ts ?? 0;
+  const tooSoon = feed < props.now - 10 * 60_000;
+  const when = (ts: number) => new Date(ts).toLocaleString(locale(), { weekday: "short", hour: "2-digit", minute: "2-digit" });
+
+  if (!open) {
+    return (
+      <button class="schedule planner-open" onClick={() => (props.pro ? setOpen(true) : props.onNeedPro())}>
+        <b>{t("planTitle")} <span class="pro">{t("proBadge")}</span></b>
+        <span>{t("planHint")}</span>
+      </button>
+    );
+  }
+  return (
+    <Card title={t("planTitle")} action={<span class="pro">{t("proBadge")}</span>}>
+      <Segmented<ScheduleType>
+        value={type}
+        onChange={(v) => { setType(v); setCold(LIFESTYLES[v].coldHours); }}
+        options={(["worker", "thursday", "techie"] as ScheduleType[]).map((v) => ({ value: v, label: t(`sched${cap(v)}` as Key) }))}
+      />
+      <label class="field">
+        <span class="field-label">{t("readyBy")}</span>
+        <input type="datetime-local" class="dt" value={ready} onInput={(e) => setReady((e.target as HTMLInputElement).value)} />
+      </label>
+      <label class="mini">
+        {t("coldHours")}
+        <input type="number" inputMode="numeric" min={1} max={48} value={cold} onInput={(e) => setCold(Number((e.target as HTMLInputElement).value) || cold)} />
+      </label>
+      <ol class="timeline">
+        {plan.map((p) => (
+          <li class={p.id === "feed" ? "first" : ""}>
+            <span class="tl-time">{when(p.ts)}</span>
+            <span>{t(`plan_${p.id}` as Key)}</span>
+          </li>
+        ))}
+      </ol>
+      {tooSoon ? <p class="warn">{t("planTooSoon")}</p> : <button class="cta" onClick={() => props.onPick(type, feed, cold)}>{t("startPlan")}</button>}
+    </Card>
+  );
+}
+
+/** A timestamp as the value of <input type="datetime-local"> (local time, no seconds). */
+function toLocalInput(ts: number): string {
+  const d = new Date(ts);
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 function Bulk(props: { b: BakeState; now: number; update: (p: Partial<BakeState>) => void; toggle: (id: string) => void }) {

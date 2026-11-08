@@ -1,10 +1,11 @@
 // Settings sheet: language, units, chimes.
 import { LANGS, lang, setLang, t } from "../i18n";
+import { MANAGE_URL } from "../lib/subscription";
 import { applyTheme, type Theme } from "../lib/theme";
 import type { AppState } from "../state";
 import { Segmented } from "../ui";
 
-export function Settings(props: { s: AppState; onClose: () => void; onLang: () => void }) {
+export function Settings(props: { s: AppState; pro: boolean; onUpgrade: () => void; onClose: () => void; onLang: () => void }) {
   const { s } = props;
   return (
     <div class="sheet-backdrop" onClick={(e) => e.target === e.currentTarget && props.onClose()}>
@@ -13,6 +14,17 @@ export function Settings(props: { s: AppState; onClose: () => void; onLang: () =
           <h2>{t("settings")}</h2>
           <button class="x" aria-label={t("close")} onClick={props.onClose}>×</button>
         </header>
+
+        {props.pro ? (
+          <p class="pro-row">
+            <span>{t("proActive")}</span>
+            <a href={MANAGE_URL} target="_blank" rel="noopener">{t("manageSub")}</a>
+          </p>
+        ) : (
+          <button class="secondary pro-row" onClick={props.onUpgrade}>
+            {t("paywallTitle")} <span class="pro">{t("proBadge")}</span>
+          </button>
+        )}
 
         <div class="field">
           <span class="field-label">{t("language")}</span>

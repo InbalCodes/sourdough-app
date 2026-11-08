@@ -12,7 +12,7 @@ function ageLabel(months: number): string {
   return y === 1 ? t("starterAge1Year") : t("starterAgeYears", { n: y });
 }
 
-export function Starters(props: { s: AppState; now: number; toast: (m: string) => void }) {
+export function Starters(props: { s: AppState; now: number; toast: (m: string) => void; onCheck: () => void }) {
   const { s, now } = props;
   const a = s.active;
   const status = starterStatus(a, now);
@@ -76,6 +76,9 @@ export function Starters(props: { s: AppState; now: number; toast: (m: string) =
           )}
         </div>
         <button class="cta" onClick={() => { s.setStarters(markFed(s.starters, a.id, Date.now())); props.toast(t("fedDone")); }}>{t("iFedIt")}</button>
+        <button class="secondary" onClick={props.onCheck}>
+          {t("checkStarter")} <span class="pro">{t("proBadge")}</span>
+        </button>
         <button class="secondary" onClick={() => patch({ status: a.status === "resting" ? "active" : "resting" })}>
           {a.status === "resting" ? t("setActive") : t("setResting")}
         </button>

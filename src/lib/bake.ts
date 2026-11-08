@@ -155,7 +155,7 @@ export function currentStep(s: BakeState): Step | undefined {
   return buildSteps(s).find((st) => !st.done);
 }
 
-export type Alert = { key: string; msg: "chimeAutolyse" | "chimeBulk" | "chimeFold" | "chimePreshape" | "chimeOven" | "chimeCold" | "chimeBakePhase1" | "chimeBakePhase2"; ts: number };
+export type Alert = { key: string; msg: "chimeFeed" | "chimeAutolyse" | "chimeBulk" | "chimeFold" | "chimePreshape" | "chimeOven" | "chimeCold" | "chimeBakePhase1" | "chimeBakePhase2"; ts: number };
 
 /** Every moment the app should chime for, for steps that aren't done yet. */
 export function alerts(s: BakeState): Alert[] {
@@ -163,6 +163,8 @@ export function alerts(s: BakeState): Alert[] {
   const steps = buildSteps(s);
   const open = (id: string) => !steps.find((st) => st.id === id)?.done;
   const st = (id: string) => steps.find((x) => x.id === id)!;
+  // A planned bake (see planBackward) starts in the future: remind to feed the starter.
+  if (open("feed-starter")) out.push({ key: "feed", msg: "chimeFeed", ts: st("feed-starter").targetTs! });
   if (open("autolyse") && !s.autolyseStart && st("autolyse").targetTs) out.push({ key: "autolyse", msg: "chimeAutolyse", ts: st("autolyse").targetTs! });
   if (open("bulk") && !s.bulkStart) out.push({ key: "bulk", msg: "chimeBulk", ts: st("bulk").targetTs! });
   for (const f of buildFolds(s)) if (!f.done) out.push({ key: f.id, msg: "chimeFold", ts: f.timerTs });
@@ -176,6 +178,25 @@ export function alerts(s: BakeState): Alert[] {
   if (p1 && !s.bakePhase2Start) out.push({ key: "phase1", msg: "chimeBakePhase1", ts: p1 });
   if (p2) out.push({ key: "phase2", msg: "chimeBakePhase2", ts: p2 });
   return out;
+}
+
+/** Typical lengths of the steps after the starter peaks, in hours (used to plan backward). */
+export const TYPICAL = { bulk: 4.5, preshape: 0.5, shape: 0.25, bake: 0.75 };
+
+export type PlanPoint = { id: "feed" | "mix" | "shape" | "fridge" | "bake" | "ready"; ts: number };
+
+/** Plan backward from when the bread should be ready: when to feed the starter, and the main moments in between. */
+export function planBackward(type: ScheduleType, readyAt: number, coldHours = LIFESTYLES[type].coldHours): PlanPoint[] {
+  const ls = LIFESTYLES[type];
+  const bake = readyAt - TYPICAL.bake * HOUR;
+  const fridge = bake - coldHours * HOUR;
+  const shape = fridge - (TYPICAL.shape + TYPICAL.preshape) * HOUR;
+  const mix = shape - TYPICAL.bulk * HOUR;
+  const feed = mix - ls.levainHours * HOUR;
+  return [
+    { id: "feed", ts: feed }, { id: "mix", ts: mix }, { id: "shape", ts: shape },
+    { id: "fridge", ts: fridge }, { id: "bake", ts: bake }, { id: "ready", ts: readyAt },
+  ];
 }
 
 /** Alerts that became due since the last check (and at most 2 minutes ago, so a reopened app doesn't replay old ones). */

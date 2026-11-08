@@ -18,6 +18,8 @@ export const SK = {
   bakers: "levain_bakers",
   migratedRecipes: "levain_v2_recipes_imported",
   v2Seen: "levain_v2_seen",
+  userId: "levain_user_id",
+  checks: "levain_checks",
   // v1 sign-in, read once to import recipes, then removed
   session: "levain_session",
   userEmail: "levain_user_email",

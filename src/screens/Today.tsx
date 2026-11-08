@@ -1,5 +1,6 @@
 // Home: what needs doing right now (starter + the current bake step).
 import { currentStep } from "../lib/bake";
+import type { CheckKind } from "../lib/check";
 import { markFed, starterStatus } from "../lib/starters";
 import { span, t, type Key } from "../i18n";
 import type { AppState } from "../state";
@@ -7,7 +8,7 @@ import { Card, JarIcon } from "../ui";
 import type { Tab } from "../app";
 import { stepTiming } from "./Bake";
 
-export function Today(props: { s: AppState; now: number; go: (tab: Tab, sub?: string) => void; toast: (m: string) => void }) {
+export function Today(props: { s: AppState; now: number; go: (tab: Tab, sub?: string) => void; toast: (m: string) => void; onCheck: (k: CheckKind) => void }) {
   const { s, now, go } = props;
   const st = s.active;
   const status = starterStatus(st, now);
@@ -54,6 +55,14 @@ export function Today(props: { s: AppState; now: number; go: (tab: Tab, sub?: st
             <button class="cta secondary" onClick={() => go("bake")}>{s.bake ? t("openBake") : t("startBake")}</button>
           </>
         )}
+      </Card>
+
+      <Card title={t("checkTitle")} action={<span class="pro">{t("proBadge")}</span>}>
+        <p class="muted">{t("checkCardHint")}</p>
+        <div class="pair">
+          <button class="secondary" onClick={() => props.onCheck("starter")}>{t("checkStarter")}</button>
+          <button class="secondary" onClick={() => props.onCheck("crumb")}>{t("checkCrumb")}</button>
+        </div>
       </Card>
 
       <Card title={t("quickCalcs")}>

@@ -126,3 +126,16 @@ test("notification ids are stable and distinct", async () => {
   assert.equal(new Set(ids).size, keys.length);
   assert.equal(alertId("fold-2"), alertId("fold-2"));
 });
+
+test("backward planner: feed time from ready time", async () => {
+  const { planBackward } = await import("../src/lib/bake.ts");
+  const ready = Date.UTC(2026, 10, 14, 10, 0); // Saturday 10:00
+  const p = planBackward("worker", ready); // 4h starter, 12h fridge
+  const at = (id: string) => p.find((x) => x.id === id)!.ts;
+  assert.equal(at("ready"), ready);
+  assert.equal(at("bake"), ready - 45 * MIN);
+  assert.equal(at("fridge"), ready - 45 * MIN - 12 * HOUR);
+  assert.equal(at("feed"), ready - (0.75 + 12 + 0.75 + 4.5 + 4) * HOUR);
+  assert.ok(p.every((x, i) => i === 0 || x.ts >= p[i - 1].ts), "in order");
+  assert.equal(planBackward("worker", ready, 8).find((x) => x.id === "feed")!.ts, at("feed") + 4 * HOUR);
+});
