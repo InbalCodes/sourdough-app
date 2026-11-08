@@ -174,7 +174,12 @@ const fr: Record<Key, string> = {
   themeAuto: "Système",
   grams: "Grammes",
   ounces: "Onces",
-  sounds: "Son à chaque étape",
+  sounds: "Alerte à chaque étape",
+  exactHint: "Pour des alertes pile à l’heure, autorisez Levain à définir des alarmes.",
+  exactBtn: "Autoriser",
+  notifOffHint: "Activez les alertes pour être prévenu à chaque étape, même appli fermée.",
+  notifOnBtn: "Activer les alertes",
+  notifDeniedHint: "Les alertes de Levain sont désactivées. Pour être prévenu à chaque étape, activez les notifications de Levain dans les réglages du téléphone.",
   privacy: "Confidentialité",
   version: "Version {v}",
 };

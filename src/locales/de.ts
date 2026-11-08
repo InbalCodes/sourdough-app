@@ -174,7 +174,12 @@ const de: Record<Key, string> = {
   themeAuto: "Wie das Handy",
   grams: "Gramm",
   ounces: "Unzen",
-  sounds: "Ton bei jedem Backschritt",
+  sounds: "Hinweis bei jedem Backschritt",
+  exactHint: "Damit Hinweise pünktlich kommen, erlaube Levain, Wecker zu stellen.",
+  exactBtn: "Erlauben",
+  notifOffHint: "Schalte Hinweise ein, um jeden Schritt mitzubekommen, auch wenn Levain geschlossen ist.",
+  notifOnBtn: "Hinweise einschalten",
+  notifDeniedHint: "Hinweise für Levain sind aus. Um bei jedem Schritt Bescheid zu bekommen, erlaube Levain Benachrichtigungen in den Handy-Einstellungen.",
   privacy: "Datenschutz",
   version: "Version {v}",
 };

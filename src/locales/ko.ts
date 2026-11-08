@@ -174,7 +174,12 @@ const ko: Record<Key, string> = {
   themeAuto: "휴대폰 설정대로",
   grams: "그램",
   ounces: "온스",
-  sounds: "단계마다 알림음",
+  sounds: "단계마다 알림",
+  exactHint: "알림이 정확한 시간에 오도록 Levain에 알람 설정을 허용해 주세요.",
+  exactBtn: "허용",
+  notifOffHint: "알림을 켜면 앱을 닫아도 단계마다 알려 드려요.",
+  notifOnBtn: "알림 켜기",
+  notifDeniedHint: "Levain 알림이 꺼져 있어요. 단계마다 알림을 받으려면 휴대폰 설정에서 Levain 알림을 켜 주세요.",
   privacy: "개인정보 처리방침",
   version: "버전 {v}",
 };

@@ -24,6 +24,20 @@ allprojects {
     }
 }
 
+// @capacitor/local-notifications asks Gradle for exactly a Java 21 toolchain (kotlin { jvmToolchain(21) }), but Android
+// Studio ships a newer Java. Compile plugins with the Java that runs Gradle; the bytecode still targets Java 21.
+// (Same fix as RockSure.)
+subprojects {
+    afterEvaluate {
+        def kotlinExt = extensions.findByName("kotlin")
+        if (kotlinExt != null) {
+            kotlinExt.jvmToolchain(JavaVersion.current().majorVersion as int)
+            def target = kotlinExt.compilerOptions.jvmTarget
+            target.set(Enum.valueOf(target.get().getClass(), "JVM_21"))
+        }
+    }
+}
+
 task clean(type: Delete) {
     delete rootProject.buildDir
 }

@@ -1,5 +1,6 @@
 // Bake tracker: choose a schedule, then tick off steps with timers.
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
+import { askPermission, exactAllowed, openExactSetting, permissionState } from "../lib/notify";
 import { buildFolds, buildSteps, coldEnd, LIFESTYLES, newBake, phaseEnds, toggleStep, type BakeState, type ScheduleType, type Step } from "../lib/bake";
 import { formatDuration, formatTime } from "../lib/time";
 import { locale, t, type Key } from "../i18n";
@@ -19,7 +20,37 @@ export function stepTiming(step: Step, now: number): string {
 export function Bake(props: { s: AppState; now: number }) {
   const { s, now } = props;
   const b = s.bake;
-  if (!b) return <ChooseSchedule onPick={(type) => s.setBake(newBake(type, Date.now()))} />;
+  // Can we notify, and on time? Checked on open and when coming back from the phone's settings.
+  const [perm, setPerm] = useState<"granted" | "denied" | "ask" | "none">("none");
+  const [exactOk, setExactOk] = useState(true);
+  const refresh = async () => {
+    setPerm(await permissionState());
+    setExactOk(await exactAllowed());
+  };
+  useEffect(() => {
+    if (b) void refresh();
+    const onVis = () => document.visibilityState === "visible" && void refresh();
+    document.addEventListener("visibilitychange", onVis);
+    return () => document.removeEventListener("visibilitychange", onVis);
+  }, [!!b]);
+
+  // After permission is granted, touch the bake so the app schedules its notifications.
+  const allow = async (bake: BakeState) => {
+    if (await askPermission()) s.setBake({ ...bake });
+    await refresh();
+  };
+
+  if (!b) {
+    return (
+      <ChooseSchedule
+        onPick={(type) => {
+          const nb = newBake(type, Date.now());
+          s.setBake(nb);
+          void allow(nb);
+        }}
+      />
+    );
+  }
 
   const update = (patch: Partial<BakeState>) => s.setBake({ ...b, ...patch });
   const nowIso = () => new Date().toISOString();
@@ -32,6 +63,24 @@ export function Bake(props: { s: AppState; now: number }) {
         <h1>{t(`sched${cap(b.scheduleType)}` as Key)}</h1>
         <p class="muted">{t("started", { t: formatTime(Date.parse(b.startTime), locale()) })}</p>
       </header>
+
+      {s.settings.bakeAlerts !== false && perm === "ask" && (
+        <Card class="compact notice">
+          <p>{t("notifOffHint")}</p>
+          <button class="small-btn" onClick={() => void allow(b)}>{t("notifOnBtn")}</button>
+        </Card>
+      )}
+      {s.settings.bakeAlerts !== false && perm === "denied" && (
+        <Card class="compact notice">
+          <p>{t("notifDeniedHint")}</p>
+        </Card>
+      )}
+      {perm === "granted" && !exactOk && s.settings.bakeAlerts !== false && (
+        <Card class="compact notice">
+          <p>{t("exactHint")}</p>
+          <button class="small-btn" onClick={() => void openExactSetting()}>{t("exactBtn")}</button>
+        </Card>
+      )}
 
       {s.selected && (
         <Card title={t("bakingRecipe", { name: s.selected.name })} class="compact">

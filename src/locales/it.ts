@@ -174,7 +174,12 @@ const it: Record<Key, string> = {
   themeAuto: "Come il telefono",
   grams: "Grammi",
   ounces: "Once",
-  sounds: "Suono a ogni fase",
+  sounds: "Avviso a ogni fase",
+  exactHint: "Per avvisi puntuali, consenti a Levain di impostare sveglie.",
+  exactBtn: "Consenti",
+  notifOffHint: "Attiva gli avvisi per sapere ogni fase anche ad app chiusa.",
+  notifOnBtn: "Attiva gli avvisi",
+  notifDeniedHint: "Gli avvisi di Levain sono disattivati. Per un avviso a ogni fase, attiva le notifiche di Levain nelle impostazioni del telefono.",
   privacy: "Privacy",
   version: "Versione {v}",
 };

@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { dueAlerts } from "./lib/bake";
 import { playChime } from "./lib/chime";
+import { scheduleBake } from "./lib/notify";
 import { importV1Recipes, loadRecipes } from "./lib/recipes";
 import { t, type Key } from "./i18n";
 import { useAppState } from "./state";
@@ -51,6 +52,11 @@ export function App() {
       if (a.key === "phase1" && !s.bake.bakePhase2Start) s.setBake({ ...s.bake, bakePhase2Start: new Date(a.ts).toISOString() });
     }
   }, [now]);
+
+  // Phone notifications for the steps still ahead, so alerts come even with the app closed.
+  useEffect(() => {
+    void scheduleBake(s.bake, (m) => t(m as Key), s.settings.bakeAlerts !== false);
+  }, [s.bake, s.settings.bakeAlerts]);
 
   // v1 users: bring their recipes over from the old account, once.
   useEffect(() => {

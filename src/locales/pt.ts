@@ -174,7 +174,12 @@ const pt: Record<Key, string> = {
   themeAuto: "Igual ao celular",
   grams: "Gramas",
   ounces: "Onças",
-  sounds: "Som a cada etapa",
+  sounds: "Aviso a cada etapa",
+  exactHint: "Para avisos na hora certa, permita que o Levain defina alarmes.",
+  exactBtn: "Permitir",
+  notifOffHint: "Ative os avisos para saber de cada etapa mesmo com o app fechado.",
+  notifOnBtn: "Ativar avisos",
+  notifDeniedHint: "Os avisos do Levain estão desligados. Para ser avisado a cada etapa, ative as notificações do Levain nas configurações do celular.",
   privacy: "Privacidade",
   version: "Versão {v}",
 };

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Status bar icon for bake notifications: a starter jar. Must be a single white shape (Android tints it). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- lid -->
+    <path android:fillColor="#FFFFFFFF" android:pathData="M8,2h8a1,1 0,0 1,1 1v1.5a1,1 0,0 1,-1 1H8a1,1 0,0 1,-1 -1V3a1,1 0,0 1,1 -1z" />
+    <!-- jar with bubbles cut out -->
+    <path android:fillColor="#FFFFFFFF" android:fillType="evenOdd"
+        android:pathData="M7,6.5h10v12a3.5,3.5 0,0 1,-3.5 3.5h-3A3.5,3.5 0,0 1,7 18.5z M10,13a1.2,1.2 0,1 0,0.01 0z M13.5,16a1,1 0,1 0,0.01 0z M14,11a0.9,0.9 0,1 0,0.01 0z" />
+</vector>

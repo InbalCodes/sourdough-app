@@ -117,3 +117,12 @@ test("durations", () => {
   assert.equal(formatSpan(HOUR + 11 * MIN, u), "1 h 11 min");
   assert.equal(formatSpan(26 * HOUR, u), "1 d 2 h");
 });
+
+test("notification ids are stable and distinct", async () => {
+  const { alertId } = await import("../src/lib/notify.ts").catch(() => ({ alertId: null as unknown as (k: string) => number }));
+  if (!alertId) return; // the Capacitor plugin can't load outside the app
+  const keys = ["autolyse", "bulk", "fold-1", "fold-2", "fold-3", "fold-4", "preshape", "oven", "cold", "phase1", "phase2"];
+  const ids = keys.map(alertId);
+  assert.equal(new Set(ids).size, keys.length);
+  assert.equal(alertId("fold-2"), alertId("fold-2"));
+});

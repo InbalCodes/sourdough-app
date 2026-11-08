@@ -174,7 +174,12 @@ const es: Record<Key, string> = {
   themeAuto: "Sistema",
   grams: "Gramos",
   ounces: "Onzas",
-  sounds: "Sonido en cada paso",
+  sounds: "Aviso en cada paso",
+  exactHint: "Para avisos a tiempo, permite que Levain programe alarmas.",
+  exactBtn: "Permitir",
+  notifOffHint: "Activa los avisos para enterarte de cada paso aunque la app esté cerrada.",
+  notifOnBtn: "Activar avisos",
+  notifDeniedHint: "Los avisos de Levain están apagados. Para recibir un aviso en cada paso, activa las notificaciones de Levain en los ajustes del celular.",
   privacy: "Privacidad",
   version: "Versión {v}",
 };

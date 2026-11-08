@@ -174,7 +174,12 @@ const ja: Record<Key, string> = {
   themeAuto: "端末に合わせる",
   grams: "グラム",
   ounces: "オンス",
-  sounds: "工程ごとに音で知らせる",
+  sounds: "工程ごとに通知",
+  exactHint: "時間どおりに通知するには、Levainにアラームの設定を許可してください。",
+  exactBtn: "許可する",
+  notifOffHint: "通知をオンにすると、アプリを閉じていても工程ごとにお知らせします。",
+  notifOnBtn: "通知をオンにする",
+  notifDeniedHint: "Levainの通知がオフになっています。工程ごとにお知らせを受け取るには、端末の設定でLevainの通知をオンにしてください。",
   privacy: "プライバシー",
   version: "バージョン {v}",
 };

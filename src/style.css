@@ -230,3 +230,6 @@ html, body { overflow-x: clip; }
 .toggle input { width: 22px; height: 22px; accent-color: var(--accent); }
 
 .toast { position: fixed; inset-inline: 16px; bottom: calc(var(--sab) + 84px); z-index: 30; margin: 0 auto; max-width: 420px; background: var(--text); color: var(--bg); border-radius: 14px; padding: 13px 16px; text-align: center; font-weight: 600; box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2); animation: rise 0.2s ease-out; }
+.notice { background: var(--accent-soft); box-shadow: none; }
+.notice p { margin: 0; font-size: 14px; }
+.notice .small-btn { margin-top: 0; background: var(--accent); color: var(--accent-ink); }
