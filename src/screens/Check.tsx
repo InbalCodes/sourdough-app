@@ -36,7 +36,9 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
   };
 
   const r = res?.result;
-  const tone = r ? (GOOD.includes(r.verdict) ? "good" : BAD.includes(r.verdict) ? "bad" : "mid") : "";
+  // When the photo isn't a starter/loaf, ignore the model's verdict and show "hard to tell".
+  const verdict: Verdict | undefined = r && (r.is_subject ? r.verdict : "unclear");
+  const tone = verdict ? (GOOD.includes(verdict) ? "good" : BAD.includes(verdict) ? "bad" : "mid") : "";
 
   return (
     <div class="screen">
@@ -67,7 +69,7 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
       {r && (
         <Card class={"verdict " + tone}>
           <div class="verdict-head">
-            <h2>{t(("v_" + r.verdict) as Key)}</h2>
+            <h2>{t(("v_" + verdict) as Key)}</h2>
             {r.is_subject && <span class="pill">{t("confidence", { p: Math.round(r.confidence * 100) })}</span>}
           </div>
           <p>{r.summary}</p>
