@@ -257,6 +257,20 @@ const it: Record<Key, string> = {
   startPlan: "Avvia questo programma",
   planTooSoon: "È troppo presto per questo programma. Scegli un orario più tardi.",
   planWaiting: "Inizia {t}: Levain ti ricorderà di rinfrescare il lievito.",
+  // Intro (first launch)
+  obSkip: "Salta",
+  obNext: "Avanti",
+  obStart: "Si inforna",
+  ob1Title: "Il tuo lievito madre, sotto controllo",
+  ob1Text: "Annota ogni rinfresco: Levain ti dice quando è pronto e quando ha di nuovo bisogno di te.",
+  ob2Title: "Calcola l'impasto",
+  ob2Text: "Inserisci la farina e ottieni acqua, sale e lievito per qualsiasi idratazione. Anche per la pizza.",
+  ob3Title: "Ti avvisa al momento giusto",
+  ob3Text: "Pieghe, formatura e cottura su un'unica tabella di marcia, con avvisi anche ad app chiusa.",
+  ob4Title: "Le tue ricette, sul telefono",
+  ob4Text: "Salva i pani riusciti e rifalli con un tocco. Nessun account richiesto.",
+  ob5Title: "Hai un dubbio? Scatta una foto",
+  ob5Text: "Levain Pro guarda il tuo lievito o la mollica e ti dice cosa fare dopo. 3 controlli gratis.",
 };
 
 export default it;

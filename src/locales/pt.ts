@@ -257,6 +257,20 @@ const pt: Record<Key, string> = {
   startPlan: "Começar este plano",
   planTooSoon: "É cedo demais para esta rotina. Escolha um horário mais tarde.",
   planWaiting: "Começa {t}: o Levain vai lembrar você de alimentar o fermento.",
+  // Intro (first launch)
+  obSkip: "Pular",
+  obNext: "Próximo",
+  obStart: "Bora assar",
+  ob1Title: "Seu fermento sob controle",
+  ob1Text: "Registre cada alimentação e o Levain mostra quando ele está pronto e quando precisa de você de novo.",
+  ob2Title: "Calcule a massa",
+  ob2Text: "Digite a farinha e veja a água, o sal e o fermento para qualquer hidratação. Pizza também.",
+  ob3Title: "Ele avisa a hora",
+  ob3Text: "Dobras, modelagem e forno em uma linha do tempo, com alertas mesmo com o app fechado.",
+  ob4Title: "Suas receitas no celular",
+  ob4Text: "Salve os pães que deram certo e faça de novo com um toque. Sem precisar de conta.",
+  ob5Title: "Na dúvida? Tire uma foto",
+  ob5Text: "O Levain Pro olha seu fermento ou o miolo e diz o que fazer em seguida. 3 análises grátis.",
 };
 
 export default pt;

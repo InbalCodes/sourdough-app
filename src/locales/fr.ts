@@ -257,6 +257,20 @@ const fr: Record<Key, string> = {
   startPlan: "Lancer ce planning",
   planTooSoon: "C'est trop tôt pour ce planning. Choisissez une heure plus tardive.",
   planWaiting: "Début {t} : Levain vous rappellera de nourrir le levain.",
+  // Intro (first launch)
+  obSkip: "Passer",
+  obNext: "Suivant",
+  obStart: "On fait du pain",
+  ob1Title: "Votre levain, sous contrôle",
+  ob1Text: "Notez chaque rafraîchi : Levain vous dit quand il est prêt et quand il a de nouveau besoin de vous.",
+  ob2Title: "Calculez votre pâte",
+  ob2Text: "Entrez la farine et obtenez l'eau, le sel et le levain pour toute hydratation. La pizza aussi.",
+  ob3Title: "Il vous prévient",
+  ob3Text: "Rabats, façonnage et cuisson sur une seule ligne de temps, avec des alertes même appli fermée.",
+  ob4Title: "Vos recettes, dans votre téléphone",
+  ob4Text: "Gardez les pains réussis et refaites-les d'un geste. Aucun compte nécessaire.",
+  ob5Title: "Un doute ? Prenez une photo",
+  ob5Text: "Levain Pro regarde votre levain ou votre mie et vous dit quoi faire ensuite. 3 analyses offertes.",
 };
 
 export default fr;

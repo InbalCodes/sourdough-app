@@ -275,6 +275,20 @@ const en = {
   startPlan: "Start this plan",
   planTooSoon: "That’s too soon for this schedule. Pick a later time.",
   planWaiting: "Starts at {t}: Levain will remind you to feed the starter.",
+  // Intro (first launch)
+  obSkip: "Skip",
+  obNext: "Next",
+  obStart: "Let's bake",
+  ob1Title: "Your starter, under control",
+  ob1Text: "Log each feeding and Levain shows when it's ready and when it needs you again.",
+  ob2Title: "Work out your dough",
+  ob2Text: "Enter the flour and get the water, salt and starter for any hydration. Pizza too.",
+  ob3Title: "It tells you when",
+  ob3Text: "Folds, shaping and baking on one timeline, with alerts even when the app is closed.",
+  ob4Title: "Your recipes, on your phone",
+  ob4Text: "Save the loaves that worked and bake them again with one tap. No account needed.",
+  ob5Title: "Not sure? Take a photo",
+  ob5Text: "Levain Pro looks at your starter or crumb and tells you what to do next. 3 checks are free.",
 };
 
 export type Key = keyof typeof en;
@@ -535,6 +549,20 @@ const he: Record<Key, string> = {
   startPlan: "להתחיל את התכנון",
   planTooSoon: "זה מוקדם מדי ללו\"ז הזה. כדאי לבחור זמן מאוחר יותר.",
   planWaiting: "מתחיל ב-{t}: Levain תזכיר להאכיל את המחמצת.",
+  // Intro (first launch)
+  obSkip: "דילוג",
+  obNext: "הבא",
+  obStart: "יאללה לאפות",
+  ob1Title: "המחמצת שלך, תחת שליטה",
+  ob1Text: "רושמים כל האכלה, ו-Levain מראה מתי המחמצת מוכנה ומתי היא צריכה אותך שוב.",
+  ob2Title: "מחשבים את הבצק",
+  ob2Text: "מזינים את כמות הקמח ומקבלים מים, מלח ומחמצת לכל הידרציה. גם לפיצה.",
+  ob3Title: "Levain אומרת לך מתי",
+  ob3Text: "קיפולים, עיצוב ואפייה על ציר זמן אחד, עם התראות גם כשהאפליקציה סגורה.",
+  ob4Title: "המתכונים שלך, בטלפון",
+  ob4Text: "שומרים את הכיכרות שהצליחו ואופים אותן שוב בלחיצה אחת. בלי חשבון.",
+  ob5Title: "לא בטוחים? מצלמים",
+  ob5Text: "Levain Pro מסתכלת על המחמצת או על פנים הלחם ואומרת מה לעשות עכשיו. 3 בדיקות בחינם.",
 };
 
 const tables: Record<string, Record<Key, string>> = { en, fr, de, it, ja, ko, pt, es, he };

@@ -257,6 +257,20 @@ const de: Record<Key, string> = {
   startPlan: "Diesen Plan starten",
   planTooSoon: "Das ist zu früh für diesen Zeitplan. Wähle eine spätere Zeit.",
   planWaiting: "Beginnt {t}: Levain erinnert dich ans Füttern.",
+  // Intro (first launch)
+  obSkip: "Überspringen",
+  obNext: "Weiter",
+  obStart: "Los geht's",
+  ob1Title: "Dein Sauerteig im Griff",
+  ob1Text: "Trag jede Fütterung ein, und Levain zeigt dir, wann er bereit ist und wann er dich wieder braucht.",
+  ob2Title: "Teig berechnen",
+  ob2Text: "Gib das Mehl ein und erhalte Wasser, Salz und Sauerteig für jede Hydration. Auch für Pizza.",
+  ob3Title: "Levain sagt dir Bescheid",
+  ob3Text: "Dehnen und Falten, Formen und Backen auf einem Zeitplan, mit Erinnerungen auch bei geschlossener App.",
+  ob4Title: "Deine Rezepte auf dem Handy",
+  ob4Text: "Speichere die Brote, die gelungen sind, und back sie mit einem Tipp wieder. Kein Konto nötig.",
+  ob5Title: "Unsicher? Mach ein Foto",
+  ob5Text: "Levain Pro schaut sich deinen Sauerteig oder die Krume an und sagt dir, was als Nächstes zu tun ist. 3 Checks gratis.",
 };
 
 export default de;
