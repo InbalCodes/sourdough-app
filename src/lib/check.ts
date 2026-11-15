@@ -57,6 +57,9 @@ export function photoToBase64(file: File, max = 1024): Promise<string> {
 
 async function sample(kind: CheckKind): Promise<CheckResponse> {
   await new Promise((r) => setTimeout(r, 900));
+  // The store screenshot page (store/shots-v2.html) puts a translated sample here.
+  const custom = (globalThis as { __shotsCheck?: Record<string, CheckResult> }).__shotsCheck?.[kind];
+  if (custom) return { result: custom, plan: "pro", remaining: 28 };
   const result: CheckResult = kind === "starter"
     ? { is_subject: true, photo_quality: "good", verdict: "rising", confidence: 0.72, summary: "Your starter is active and still rising. It isn't at its peak yet.", signs: ["Lots of small bubbles on the side of the jar", "The top is flat, not domed yet"], next_steps: ["Wait about 1–2 hours and check again", "Put a rubber band at today's level to see the rise"] }
     : { is_subject: true, photo_quality: "good", verdict: "underproofed", confidence: 0.64, summary: "The crumb looks a little underproofed.", signs: ["Dense areas near the bottom", "A few large holes under the top crust"], next_steps: ["Let bulk fermentation run 30–60 minutes longer", "Wait for about 50–75% rise before shaping"] };

@@ -20,7 +20,8 @@ export function getUserId(): string {
 }
 
 /** RevenueCat public SDK keys (they ship inside the app; not secrets). From .env (VITE_REVENUECAT_*). */
-const API_KEY = (isIOS() ? import.meta.env.VITE_REVENUECAT_IOS_KEY : import.meta.env.VITE_REVENUECAT_ANDROID_KEY) as string | undefined;
+const IOS_KEY = "appl_bxBoOCUHKThMvWgxrtusVZgugGH";
+const API_KEY = isIOS() ? IOS_KEY : (import.meta.env.VITE_REVENUECAT_ANDROID_KEY as string | undefined);
 /** Dev builds can skip the paywall (VITE_DEV_UNLOCK=1). Never set for store builds. */
 const DEV_UNLOCK = import.meta.env.VITE_DEV_UNLOCK === "1";
 

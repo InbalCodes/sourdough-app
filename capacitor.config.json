@@ -6,7 +6,6 @@
     "androidScheme": "https"
   },
   "ios": {
-    "contentInset": "automatic",
     "preferredContentMode": "mobile"
   },
   "android": {
