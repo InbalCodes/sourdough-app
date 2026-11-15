@@ -14,8 +14,8 @@ const MAP = { "en-US": ["en-US", "en"], "fr-FR": ["fr-FR", "fr"], "de-DE": ["de-
   "ko-KR": ["ko", "ko"], "pt-BR": ["pt-BR", "pt"], "es-419": ["es-MX", "es"], "iw-IL": ["he", "he"] };
 const SHOTS = !process.argv.includes("--no-shots");
 
-await api("PATCH", `/v1/appStoreVersions/${VERSION}`, { data: { type: "appStoreVersions", id: VERSION, attributes: { versionString: "2.0.2", copyright: "2026 UNIQOPS TECHNOLOGIES LTD" } } });
-console.log("version → 2.0.2");
+await api("PATCH", `/v1/appStoreVersions/${VERSION}`, { data: { type: "appStoreVersions", id: VERSION, attributes: { versionString: "2.0.3", copyright: "2026 UNIQOPS TECHNOLOGIES LTD" } } });
+console.log("version → 2.0.3");
 
 const appInfo = (await api("GET", `/v1/apps/${APP_ID}/appInfos`)).data.find((i) => i.attributes.appStoreState !== "READY_FOR_SALE");
 const infoLocs = (await api("GET", `/v1/appInfos/${appInfo.id}/appInfoLocalizations`)).data;
