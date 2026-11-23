@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Release signing: android/keystore.properties (never in git) points to the upload key.
+// While a password is empty the release build stays unsigned, so it can still be signed in Android Studio.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) keystorePropsFile.withInputStream { keystoreProps.load(it) }
+def canSign = ["storeFile", "storePassword", "keyAlias", "keyPassword"].every { keystoreProps[it] }
+
 android {
     namespace = "com.inbal.levain"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -16,6 +23,16 @@ android {
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            if (canSign) {
+                storeFile file(keystoreProps["storeFile"])
+                storePassword keystoreProps["storePassword"]
+                keyAlias keystoreProps["keyAlias"]
+                keyPassword keystoreProps["keyPassword"]
+            }
+        }
+    }
     buildTypes {
         debug {
             // Test builds install next to the store app, so testing never touches real data.
@@ -23,6 +40,7 @@ android {
             versionNameSuffix "-dev"
         }
         release {
+            if (canSign) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
