@@ -6,7 +6,8 @@
     "androidScheme": "https"
   },
   "ios": {
-    "preferredContentMode": "mobile"
+    "preferredContentMode": "mobile",
+    "includePlugins": ["@capacitor/app", "@capacitor/local-notifications", "@capacitor/status-bar", "@revenuecat/purchases-capacitor"]
   },
   "android": {
     "allowMixedContent": false

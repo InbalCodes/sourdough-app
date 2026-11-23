@@ -1,0 +1,124 @@
+{
+  "project_info": {
+    "project_number": "458571031799",
+    "project_id": "uniqops-apps",
+    "storage_bucket": "uniqops-apps.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458571031799:android:9cd95ed7e016fab587dff2",
+        "android_client_info": {
+          "package_name": "com.inbal.levain"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdFSCT-LHRiSVEaJShfntCU8WXTNXz-GE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458571031799:android:a5b1db54ad55611a87dff2",
+        "android_client_info": {
+          "package_name": "com.inbal.levain.dev"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdFSCT-LHRiSVEaJShfntCU8WXTNXz-GE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458571031799:android:6a4279cfafe4c46e87dff2",
+        "android_client_info": {
+          "package_name": "com.uniqops.allout"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdFSCT-LHRiSVEaJShfntCU8WXTNXz-GE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458571031799:android:020f6c1407f2fa0c87dff2",
+        "android_client_info": {
+          "package_name": "com.uniqops.clearcut"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdFSCT-LHRiSVEaJShfntCU8WXTNXz-GE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458571031799:android:10f10c6d04a711a387dff2",
+        "android_client_info": {
+          "package_name": "com.uniqops.dripless"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdFSCT-LHRiSVEaJShfntCU8WXTNXz-GE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:458571031799:android:f1fb42733a06dbbd87dff2",
+        "android_client_info": {
+          "package_name": "com.uniqops.rocksure"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCdFSCT-LHRiSVEaJShfntCU8WXTNXz-GE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

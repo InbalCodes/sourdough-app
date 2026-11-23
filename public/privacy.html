@@ -23,7 +23,7 @@
 <p>Levain לא דורשת חשבון או התחברות. המחמצות, התמונות שלהן, המתכונים, האפיות וההגדרות נשמרים רק על המכשיר שלך. אנחנו לא מקבלים אותם. מערכת ההפעלה (Android או iOS) עשויה לכלול אותם בגיבוי של המכשיר לחשבון Google או iCloud שלך, לפי ההגדרות שלך.</p>
 
 <h2>2. מזהה התקנה אקראי</h2>
-<p>בהתקנה האפליקציה יוצרת מזהה אקראי שלא קשור לשמך, למייל או למכשיר. הוא משמש רק כדי לספור בדיקות מתמונה ולזהות רכישה של Levain Pro.</p>
+<p>בהתקנה האפליקציה יוצרת מזהה אקראי שלא קשור לשמך, למייל או למכשיר. הוא משמש רק כדי לספור בדיקות מתמונה, לזהות רכישה של Levain Pro ולקשר בין דוחות קריסה של אותה התקנה.</p>
 
 <h2>3. בדיקה מתמונה (Levain Pro)</h2>
 <p>כשבוחרים לבדוק מחמצת או לחם מתמונה, התמונה (מוקטנת) נשלחת לשרת שלנו יחד עם המזהה האקראי והשפה, ומשם ל-Anthropic (מודל ה-AI Claude) כדי לנתח אותה. אנחנו לא שומרים את התמונה אחרי שהתשובה חוזרת. Anthropic מעבדת אותה לפי התנאים המסחריים שלה ולא משתמשת בה לאימון מודלים. אנחנו שומרים רק ספירה של מספר הבדיקות לכל מזהה, ויומן טכני בלי התמונה.</p>
@@ -34,13 +34,16 @@
 <h2>5. התראות</h2>
 <p>התראות על שלבי האפייה מתוזמנות בטלפון עצמו ולא נשלחות דרך שרת.</p>
 
-<h2>6. משתמשים מגרסה 1</h2>
+<h2>6. דוחות קריסה</h2>
+<p>כדי למצוא ולתקן תקלות, אפליקציית Android משתמשת ב-Firebase Crashlytics, שירות של Google שפועל עבורנו. כשהאפליקציה קורסת או נתקלת בשגיאה לא צפויה, נשלח דוח עם הפרטים הטכניים של השגיאה, המזהה האקראי, דגם המכשיר, גרסת מערכת ההפעלה, גרסת האפליקציה ושעת הקריסה. הדוחות לא כוללים תמונות, מתכונים או תוכן אחר שלך, ו-Google שומרת אותם עד 90 יום. <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">מידע על הפרטיות ב-Firebase</a>.</p>
+
+<h2>7. משתמשים מגרסה 1</h2>
 <p>בגרסה 1 היה אפשר להתחבר עם Google או Apple, והשם, המייל והמתכונים נשמרו אצלנו (ב-Airtable). אחרי העדכון לגרסה 2, המתכונים מועברים פעם אחת לטלפון. אפשר לבקש מחיקה של החשבון הישן בכל רגע בדף <a href="/delete-account.html">מחיקת חשבון</a> או במייל, וכל המידע מגרסה 1 יימחק מהשרתים שלנו עד פברואר 2027.</p>
 
-<h2>7. שיתוף מידע</h2>
-<p>אנחנו לא מוכרים מידע ולא משתמשים בפרסומות. מידע עובר לצד שלישי רק כמתואר למעלה (Anthropic לבדיקה מתמונה, RevenueCat, Google ו-Apple לרכישות).</p>
+<h2>8. שיתוף מידע</h2>
+<p>אנחנו לא מוכרים מידע ולא משתמשים בפרסומות. מידע עובר לצד שלישי רק כמתואר למעלה (Anthropic לבדיקה מתמונה, RevenueCat, Google ו-Apple לרכישות, ו-Google Firebase לדוחות קריסה).</p>
 
-<h2>8. יצירת קשר</h2>
+<h2>9. יצירת קשר</h2>
 <p>לכל שאלה או בקשה: <a href="mailto:uniqops.office@gmail.com">uniqops.office@gmail.com</a>. Levain מופעלת על ידי UNIQOPS TECHNOLOGIES LTD.</p>
 
 <hr class="lang-divider">
@@ -53,7 +56,7 @@
 <p>Levain needs no account and no sign-in. Your starters and their photos, recipes, bakes and settings are stored only on your device. We do not receive them. Your phone's operating system (Android or iOS) may include them in your device backup to your Google or iCloud account, depending on your settings.</p>
 
 <h2>2. A random install ID</h2>
-<p>When installed, the app creates a random ID that is not linked to your name, email or device. It is used only to count photo checks and to recognize a Levain Pro purchase.</p>
+<p>When installed, the app creates a random ID that is not linked to your name, email or device. It is used only to count photo checks, to recognize a Levain Pro purchase and to link crash reports from the same install.</p>
 
 <h2>3. Photo check (Levain Pro)</h2>
 <p>When you choose to check a starter or a loaf from a photo, the photo (downsized) is sent to our server with the random ID and your language, and from there to Anthropic (the Claude AI model) to be analyzed. We do not keep the photo after the answer comes back. Anthropic processes it under its commercial terms and does not use it to train models. We keep only a count of checks per ID and a technical log without the photo.</p>
@@ -64,13 +67,16 @@
 <h2>5. Notifications</h2>
 <p>Bake step notifications are scheduled on your phone and are not sent through a server.</p>
 
-<h2>6. Users of version 1</h2>
+<h2>6. Crash reports</h2>
+<p>To find and fix problems, the Android app uses Firebase Crashlytics, a Google service that acts on our behalf. When the app crashes or hits an unexpected error, it sends a report with the technical details of the error, the random ID, device model, operating system version, app version and the time of the crash. Reports never include your photos, recipes or other content, and Google keeps them for up to 90 days. See <a href="https://firebase.google.com/support/privacy" target="_blank" rel="noopener">Firebase's privacy information</a>.</p>
+
+<h2>7. Users of version 1</h2>
 <p>Version 1 offered sign-in with Google or Apple, and stored your name, email and recipes with us (in Airtable). After the update to version 2, your recipes are copied to your phone once. You can ask us to delete the old account at any time on the <a href="/delete-account.html">delete account</a> page or by email, and all version 1 data will be deleted from our servers by February 2027.</p>
 
-<h2>7. Sharing</h2>
-<p>We do not sell data and show no ads. Data reaches third parties only as described above (Anthropic for photo checks; RevenueCat, Google and Apple for purchases).</p>
+<h2>8. Sharing</h2>
+<p>We do not sell data and show no ads. Data reaches third parties only as described above (Anthropic for photo checks; RevenueCat, Google and Apple for purchases; Google Firebase for crash reports).</p>
 
-<h2>8. Contact</h2>
+<h2>9. Contact</h2>
 <p>For any question or request: <a href="mailto:uniqops.office@gmail.com">uniqops.office@gmail.com</a>. Levain is operated by UNIQOPS TECHNOLOGIES LTD.</p>
 </div>
 
