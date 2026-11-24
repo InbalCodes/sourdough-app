@@ -13,6 +13,7 @@ import { t, type Key } from "./i18n";
 import { useAppState } from "./state";
 import { SK, loadRaw } from "./lib/store";
 import { useNow } from "./ui";
+import { secretTap } from "./lib/crash";
 import { Bake } from "./screens/Bake";
 import { Calculators, type BakersDraft, type CalcTab } from "./screens/Calculators";
 import { Recipes } from "./screens/Recipes";
@@ -103,7 +104,7 @@ export function App() {
   return (
     <div class="app">
       <header class="topbar">
-        <span class="brand">Levain</span>
+        <span class="brand" onClick={secretTap}>Levain</span>
         <button class="icon-btn" aria-label={t("settings")} onClick={() => setSettingsOpen(true)}>
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <circle cx="12" cy="12" r="3" />

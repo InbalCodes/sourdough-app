@@ -52,6 +52,8 @@
 
 * { box-sizing: border-box; }
 html, body { margin: 0; background: var(--bg); color: var(--text); }
+/* No double-tap zoom (iOS zooms the whole app on quick taps); pinch zoom still works. */
+html { touch-action: manipulation; }
 button, input, select { font: inherit; color: inherit; }
 button { cursor: pointer; }
 button:disabled, input:disabled { opacity: 0.55; cursor: default; }
