@@ -139,3 +139,13 @@ test("backward planner: feed time from ready time", async () => {
   assert.ok(p.every((x, i) => i === 0 || x.ts >= p[i - 1].ts), "in order");
   assert.equal(planBackward("worker", ready, 8).find((x) => x.id === "feed")!.ts, at("feed") + 4 * HOUR);
 });
+
+test("rating prompt: only after 2 good moments, 2 days in, then every 120 days", async () => {
+  const { shouldAsk } = await import("../src/lib/reviewRule.ts");
+  const DAY = 24 * HOUR;
+  assert.equal(shouldAsk({ firstSeen: T0, moments: 1 }, T0 + 10 * DAY), false);
+  assert.equal(shouldAsk({ firstSeen: T0, moments: 2 }, T0 + DAY), false);
+  assert.equal(shouldAsk({ firstSeen: T0, moments: 2 }, T0 + 3 * DAY), true);
+  assert.equal(shouldAsk({ firstSeen: T0, moments: 5, askedAt: T0 + 3 * DAY }, T0 + 60 * DAY), false);
+  assert.equal(shouldAsk({ firstSeen: T0, moments: 5, askedAt: T0 + 3 * DAY }, T0 + 124 * DAY), true);
+});

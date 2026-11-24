@@ -7,7 +7,7 @@
   },
   "ios": {
     "preferredContentMode": "mobile",
-    "includePlugins": ["@capacitor/app", "@capacitor/local-notifications", "@capacitor/status-bar", "@revenuecat/purchases-capacitor"]
+    "includePlugins": ["@capacitor-firebase/crashlytics", "@capawesome/capacitor-app-review", "@capacitor/app", "@capacitor/local-notifications", "@capacitor/status-bar", "@revenuecat/purchases-capacitor"]
   },
   "android": {
     "allowMixedContent": false

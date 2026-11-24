@@ -5,8 +5,8 @@ import { FirebaseCrashlytics } from "@capacitor-firebase/crashlytics";
 import { Capacitor } from "@capacitor/core";
 
 /** Phone builds for testing (vite --mode device) don't report, so real users' numbers stay clean.
- *  Android only for now: the iOS app has no Firebase app (GoogleService-Info.plist) and leaves the plugin out. */
-const ON = Capacitor.getPlatform() === "android" && import.meta.env.PROD && import.meta.env.MODE !== "device";
+ */
+const ON = Capacitor.isNativePlatform() && import.meta.env.PROD && import.meta.env.MODE !== "device";
 
 let started = false;
 
@@ -30,7 +30,7 @@ let lastTap = 0;
 
 /** Hidden test: 7 quick taps on the logo crash the app, to check that reports reach Firebase. */
 export function secretTap(): void {
-  if (Capacitor.getPlatform() !== "android") return;
+  if (!Capacitor.isNativePlatform()) return;
   const now = Date.now();
   taps = now - lastTap < 700 ? taps + 1 : 1;
   lastTap = now;

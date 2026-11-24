@@ -2,6 +2,7 @@
 import { useEffect, useState } from "preact/hooks";
 import { CheckError, photoToBase64, runCheck, type CheckKind, type CheckResponse, type Verdict } from "../lib/check";
 import { lang, t, type Key } from "../i18n";
+import { goodMoment } from "../lib/review";
 import { Card } from "../ui";
 
 const GOOD: Verdict[] = ["peak", "well_proofed"];
@@ -19,8 +20,10 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
     setBusy(true);
     setErr("");
     try {
-      setRes(await runCheck(kind, b64, lang));
+      const out = await runCheck(kind, b64, lang);
+      setRes(out);
       setWaitingPro(false);
+      if (out.result?.is_subject && GOOD.includes(out.result.verdict)) goodMoment();
     } catch (x) {
       const code = x instanceof CheckError ? x.code : "";
       // Right after buying, the server may need a moment to see the purchase.

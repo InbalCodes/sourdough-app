@@ -4,6 +4,7 @@ import { askPermission, exactAllowed, openExactSetting, permissionState } from "
 import { buildFolds, buildSteps, coldEnd, LIFESTYLES, newBake, phaseEnds, planBackward, toggleStep, type BakeState, type ScheduleType, type Step } from "../lib/bake";
 import { formatDuration, formatTime } from "../lib/time";
 import { locale, t, type Key } from "../i18n";
+import { goodMoment } from "../lib/review";
 import type { AppState } from "../state";
 import { Card, Segmented, weight } from "../ui";
 
@@ -103,7 +104,10 @@ export function Bake(props: { s: AppState; now: number; pro: boolean; onNeedPro:
       <ol class="steps">
         {steps.map((st) => (
           <li class={"step" + (st.done ? " done" : "") + (st.kind === "oven" ? " oven" : "")}>
-            <button class="check" aria-pressed={st.done} aria-label={t(stepKey(st.id))} onClick={() => s.setBake(toggleStep(b, st.id, Date.now()))} />
+            <button class="check" aria-pressed={st.done} aria-label={t(stepKey(st.id))} onClick={() => {
+              s.setBake(toggleStep(b, st.id, Date.now()));
+              if (st.id === "score-bake" && !st.done) goodMoment(); // the bread is out of the oven
+            }} />
             <div class="step-body">
               <div class="step-name">
                 {t(stepKey(st.id))}

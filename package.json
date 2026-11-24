@@ -1,6 +1,6 @@
 {
   "name": "levain",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "private": true,
   "type": "module",
   "description": "Levain: sourdough starter, calculators and bake timers",
@@ -27,6 +27,7 @@
     "@capacitor/ios": "8.5.2",
     "@capacitor/local-notifications": "^8.3.1",
     "@capacitor/status-bar": "^8.0.3",
+    "@capawesome/capacitor-app-review": "8.1.0",
     "@netlify/blobs": "^11.1.4",
     "@revenuecat/purchases-capacitor": "^13.7.4",
     "preact": "10.29.8"

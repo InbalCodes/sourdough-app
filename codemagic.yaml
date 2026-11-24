@@ -54,8 +54,39 @@ workflows:
             --project "$XCODE_PROJECT" \
             --scheme "$XCODE_SCHEME"
 
+      # Runs before publishing: if the symbols can't be uploaded, nothing reaches TestFlight.
+      # Same step as ClearCut (the Xcode upload phase hides its own failures).
+      - name: Upload dSYM to Crashlytics (must succeed)
+        script: |
+          set -eu
+          DERIVED="$HOME/Library/Developer/Xcode/DerivedData"
+          IPA=$(find build/ios/ipa -name '*.ipa' | head -1)
+          [ -n "$IPA" ] || { echo "error: no IPA found"; exit 1; }
+          WORK=$(mktemp -d)
+          unzip -q "$IPA" 'Payload/App.app/App' -d "$WORK"
+          APP_UUID=$(dwarfdump --uuid "$WORK/Payload/App.app/App" | awk 'NR==1 {print $2}')
+          [ -n "$APP_UUID" ] || { echo "error: could not read the app UUID"; exit 1; }
+          echo "App binary UUID: $APP_UUID"
+
+          UPLOADER=$(find "$DERIVED" -type f -path '*/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/upload-symbols' 2>/dev/null | head -1 || true)
+          [ -n "$UPLOADER" ] || { echo "error: upload-symbols not found"; exit 1; }
+
+          # Only the dSYM whose UUID matches the shipped binary is useful to Crashlytics.
+          MATCH=""
+          for CANDIDATE in $(find build/ios "$DERIVED" -type d -name 'App.app.dSYM' 2>/dev/null || true); do
+            if dwarfdump --uuid "$CANDIDATE" | grep -q "$APP_UUID"; then MATCH="$CANDIDATE"; break; fi
+          done
+          [ -n "$MATCH" ] || { echo "error: no dSYM matches UUID $APP_UUID"; exit 1; }
+          echo "Matching dSYM: $MATCH"
+
+          mkdir -p build/ios/dsym
+          ditto -c -k --keepParent "$MATCH" build/ios/dsym/App.app.dSYM.zip
+          "$UPLOADER" -gsp ios/App/App/GoogleService-Info.plist -p ios "$MATCH"
+          echo "dSYM uploaded for UUID $APP_UUID"
+
     artifacts:
       - build/ios/ipa/*.ipa
+      - build/ios/dsym/*.zip
       - /tmp/xcodebuild_logs/*.log
 
     publishing:
