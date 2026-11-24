@@ -17,6 +17,12 @@
   .screen { width: 100%; height: 100%; border-radius: 37px; overflow: hidden; position: relative; background: #fbf8f4; }
   /* the app is laid out at 393 px wide (an iPhone), then scaled to fit the frame */
   iframe { position: absolute; left: 0; top: 0; border: 0; width: 393px; height: 836px; transform: scale(0.87532); transform-origin: 0 0; }
+  /* raw=1: only the app screen, 393×852, no caption or frame (used for the catalog site) */
+  html.raw, html.raw body { width: 393px; height: 852px; }
+  html.raw .bg, html.raw .cap { display: none; }
+  html.raw .phone { left: 0; top: 0; width: 393px; height: 852px; transform: none; border-radius: 0; padding: 0; box-shadow: none; }
+  html.raw .screen { border-radius: 0; }
+  html.raw iframe { height: 852px; transform: none; }
 </style></head>
 <body>
 <div class="bg"></div>
@@ -93,6 +99,7 @@ const shot = Math.max(1, Math.min(5, +(q.get("shot") || 1)));
 const lang = T[q.get("lang")] ? q.get("lang") : "en";
 const [h, p] = T[lang][shot - 1];
 document.documentElement.lang = lang;
+if (q.get("raw")) document.documentElement.classList.add("raw");
 document.querySelector(".cap").dir = lang === "he" ? "rtl" : "ltr";
 document.getElementById("h").innerHTML = h.replace(/\*(.+?)\*/g, "<em>$1</em>");
 document.getElementById("p").textContent = p;
