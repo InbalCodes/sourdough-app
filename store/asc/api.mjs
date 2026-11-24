@@ -21,7 +21,7 @@ export async function api(method, path, body) {
   const res = await fetch(url, { method, headers: { Authorization: `Bearer ${token()}`, "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
   const text = await res.text();
   const data = text ? JSON.parse(text) : {};
-  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${JSON.stringify(data.errors?.map((e) => e.detail ?? e.title))}`);
+  if (!res.ok) throw new Error(`${method} ${path} → ${res.status}: ${JSON.stringify(data.errors?.map((e) => ({ d: e.detail ?? e.title, m: e.meta })))}`);
   return data;
 }
 
