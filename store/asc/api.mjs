@@ -3,7 +3,8 @@ import { createSign, createPrivateKey } from "node:crypto";
 import { readFileSync } from "node:fs";
 
 const DIR = "C:/Users/inbal/Documents/NEVER_DELETE_APP_BUNDLE_KEY/Levain";
-const KEY_ID = "7676K5YR2A";
+// The key ID lives next to the .p8 (outside the repo) so it never reaches the site's build output.
+const KEY_ID = readFileSync(`${DIR}/asc-key-id.txt`, "utf8").trim();
 const ISSUER = "9f015a66-1e48-465c-887c-71281f9992fa";
 export const APP_ID = "6828526036";
 
