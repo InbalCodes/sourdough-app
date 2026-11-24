@@ -1,5 +1,12 @@
 apply plugin: 'com.android.application'
 
+// Release signing: android/keystore.properties (never in git) points to the upload key.
+// While a password is empty the release build stays unsigned, so it can still be signed in Android Studio.
+def keystorePropsFile = rootProject.file("keystore.properties")
+def keystoreProps = new Properties()
+if (keystorePropsFile.exists()) keystorePropsFile.withInputStream { keystoreProps.load(it) }
+def canSign = ["storeFile", "storePassword", "keyAlias", "keyPassword"].every { keystoreProps[it] }
+
 android {
     namespace = "com.inbal.levain"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -7,13 +14,23 @@ android {
         applicationId "com.inbal.levain"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 5
-        versionName "2.0.1"
+        versionCode 8
+        versionName "2.0.4"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern = '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        release {
+            if (canSign) {
+                storeFile file(keystoreProps["storeFile"])
+                storePassword keystoreProps["storePassword"]
+                keyAlias keystoreProps["keyAlias"]
+                keyPassword keystoreProps["keyPassword"]
+            }
         }
     }
     buildTypes {
@@ -23,6 +40,7 @@ android {
             versionNameSuffix "-dev"
         }
         release {
+            if (canSign) signingConfig signingConfigs.release
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
@@ -53,7 +71,15 @@ try {
     def servicesJSON = file('google-services.json')
     if (servicesJSON.text) {
         apply plugin: 'com.google.gms.google-services'
+        apply plugin: 'com.google.firebase.crashlytics'
     }
 } catch(Exception e) {
     logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}
+
+// Store builds must report crashes: stop a release build that has no Firebase config.
+gradle.taskGraph.whenReady { graph ->
+    if (graph.allTasks.any { it.project == project && it.name.toLowerCase().contains('release') } && !file('google-services.json').exists()) {
+        throw new GradleException("android/app/google-services.json is missing (Firebase). See phone-apps/infra/CRASH-REPORTING.md")
+    }
 }

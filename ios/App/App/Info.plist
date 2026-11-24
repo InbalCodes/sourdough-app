@@ -32,29 +32,27 @@
 	<array>
 		<string>arm64</string>
 	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleURLName</key>
-			<string>com.inbal.levain</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.inbal.levain</string>
-			</array>
-		</dict>
-	</array>
+	<key>NSCameraUsageDescription</key>
+	<string>Levain uses the camera when you take a photo of your starter or your bread to check it.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Levain opens your photos when you choose a picture of your starter or your bread.</string>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>CFBundleLocalizations</key>
 	<array>
-		<string>he</string>
 		<string>en</string>
+		<string>fr</string>
+		<string>de</string>
+		<string>it</string>
+		<string>ja</string>
+		<string>ko</string>
+		<string>pt-BR</string>
+		<string>es-419</string>
+		<string>he</string>
 	</array>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
-		<string>UIInterfaceOrientationLandscapeLeft</string>
-		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
 	<key>UISupportedInterfaceOrientations~ipad</key>
 	<array>

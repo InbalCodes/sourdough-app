@@ -257,6 +257,20 @@ const es: Record<Key, string> = {
   startPlan: "Empezar este plan",
   planTooSoon: "Es demasiado pronto para este horario. Elige una hora más tarde.",
   planWaiting: "Empieza {t}: Levain te recordará alimentar la masa madre.",
+  // Intro (first launch)
+  obSkip: "Omitir",
+  obNext: "Siguiente",
+  obStart: "A hornear",
+  ob1Title: "Tu masa madre, bajo control",
+  ob1Text: "Anota cada alimentación y Levain te muestra cuándo está lista y cuándo te necesita otra vez.",
+  ob2Title: "Calcula tu masa",
+  ob2Text: "Ingresa la harina y obtén el agua, la sal y la masa madre para cualquier hidratación. Pizza también.",
+  ob3Title: "Te avisa cuándo",
+  ob3Text: "Pliegues, formado y horneado en una sola línea de tiempo, con avisos aunque la app esté cerrada.",
+  ob4Title: "Tus recetas en el celular",
+  ob4Text: "Guarda los panes que salieron bien y hazlos otra vez con un toque. Sin cuenta.",
+  ob5Title: "¿Dudas? Toma una foto",
+  ob5Text: "Levain Pro mira tu masa madre o la miga y te dice qué hacer después. 3 revisiones gratis.",
 };
 
 export default es;

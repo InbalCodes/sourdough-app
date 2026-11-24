@@ -257,6 +257,20 @@ const ko: Record<Key, string> = {
   startPlan: "이 계획으로 시작",
   planTooSoon: "이 일정으로는 시간이 부족해요. 더 늦은 시간을 골라 주세요.",
   planWaiting: "{t} 시작: 먹이 줄 시간을 Levain이 알려 드려요.",
+  // Intro (first launch)
+  obSkip: "건너뛰기",
+  obNext: "다음",
+  obStart: "시작하기",
+  ob1Title: "르방을 한눈에",
+  ob1Text: "먹이 줄 때마다 기록하면 언제 준비되는지, 언제 다시 돌봐야 하는지 Levain이 알려 줘요.",
+  ob2Title: "반죽 계산",
+  ob2Text: "밀가루 양만 넣으면 어떤 수화율이든 물, 소금, 르방 양이 나와요. 피자도요.",
+  ob3Title: "때가 되면 알려 줘요",
+  ob3Text: "폴딩, 성형, 굽기를 한 타임라인에서. 앱을 닫아도 알림이 와요.",
+  ob4Title: "내 레시피를 휴대폰에",
+  ob4Text: "잘 구운 빵을 저장하고 한 번에 다시 구워 보세요. 계정은 필요 없어요.",
+  ob5Title: "헷갈리면 사진으로",
+  ob5Text: "Levain Pro가 르방이나 빵 속을 보고 다음에 할 일을 알려 줘요. 3회 무료.",
 };
 
 export default ko;

@@ -20,6 +20,7 @@ export const SK = {
   v2Seen: "levain_v2_seen",
   userId: "levain_user_id",
   checks: "levain_checks",
+  onboarded: "levain_onboarded",
   // v1 sign-in, read once to import recipes, then removed
   session: "levain_session",
   userEmail: "levain_user_email",

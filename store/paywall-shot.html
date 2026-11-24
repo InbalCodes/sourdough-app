@@ -1,0 +1,18 @@
+<!doctype html>
+<!-- The Pro paywall as on an iPhone, for App Store review screenshots. Served by the Vite dev server:
+     /store/paywall-shot.html  (rendered at 393×852 × 3 = 1179×2556) -->
+<html><head><meta charset="utf-8"><style>html,body{margin:0;width:393px;height:852px;overflow:hidden}iframe{border:0;width:393px;height:852px}</style></head>
+<body><iframe id="f"></iframe>
+<script>
+localStorage.clear();
+localStorage.setItem("levain_onboarded", "1");
+localStorage.setItem("levain_language", "en");
+localStorage.setItem("levain_settings", JSON.stringify({ theme: "light" }));
+const f = document.getElementById("f");
+f.addEventListener("load", () => setTimeout(() => {
+  const d = f.contentDocument;
+  d.querySelector('.topbar .icon-btn').click();
+  setTimeout(() => { d.querySelector(".pro-row").click(); setTimeout(() => { const w = d.createTreeWalker(d.body, NodeFilter.SHOW_TEXT); while (w.nextNode()) w.currentNode.nodeValue = w.currentNode.nodeValue.replace(/Google Play/g, "App Store"); document.title = "ready"; }, 1500); }, 500);
+}, 800), { once: true });
+f.src = "/?lang=en#free";
+</script></body></html>

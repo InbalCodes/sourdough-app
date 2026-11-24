@@ -8,6 +8,11 @@
 # The old login/recipe functions stay for v1 users until about February 2027 (see phone-apps/apps/levain/PLAN.md).
 
 # Redirect /api/login to the serverless function
+# Netlify's secret scan flags the Firebase Android key (AIza...) in google-services.json. That key is public by design:
+# it ships inside every APK and is limited by Firebase rules, not secrecy. The site never serves the android/ folder.
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "android/app/google-services.json"
+
 [[redirects]]
   from = "/api/login"
   to = "/.netlify/functions/login"

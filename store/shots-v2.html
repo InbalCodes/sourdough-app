@@ -1,0 +1,166 @@
+<!doctype html>
+<!-- One store screenshot of Levain 2: a headline over the real app, loaded with demo data.
+     Served by the Vite dev server (npm run dev, port 5184): /store/shots-v2.html?shot=1&lang=en
+     Rendered by store/shots-v2.mjs with headless Edge. size=63 → 1206×2622, size=play → 1080×1920, default 1320×2868. -->
+<html><head><meta charset="utf-8" /><title>store shot</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;600;800&family=Noto+Sans+JP:wght@400;700;800&family=Noto+Sans+KR:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  html, body { margin: 0; width: 440px; height: 956px; overflow: hidden; background: #3B2F2A; font-family: Heebo, "Noto Sans JP", "Noto Sans KR", system-ui, sans-serif; }
+  body { position: relative; }
+  .bg { position: absolute; inset: 0; background: radial-gradient(120% 65% at 50% 0%, #6B5446 0%, #3B2F2A 60%); }
+  .cap { position: absolute; top: 46px; left: 28px; right: 28px; text-align: center; color: #FAF7F2; }
+  .cap h1 { margin: 0; text-wrap: balance; overflow-wrap: break-word; font-size: 36px; line-height: 1.12; font-weight: 800; }
+  .cap h1 em { font-style: normal; color: #E2B58F; }
+  .cap p { margin: 10px 0 0; font-size: 18px; color: #D9CBBE; line-height: 1.3; text-wrap: balance; }
+  .phone { position: absolute; left: 50%; top: 196px; width: 344px; height: 732px; transform: translateX(-50%);
+           border-radius: 46px; background: #1d1714; padding: 10px; box-shadow: 0 30px 80px rgba(0,0,0,.55), inset 0 0 0 2px #4a3d36; }
+  .screen { width: 100%; height: 100%; border-radius: 37px; overflow: hidden; position: relative; background: #fbf8f4; }
+  /* the app is laid out at 393 px wide (an iPhone), then scaled to fit the frame */
+  iframe { position: absolute; left: 0; top: 0; border: 0; width: 393px; height: 836px; transform: scale(0.87532); transform-origin: 0 0; }
+</style></head>
+<body>
+<div class="bg"></div>
+<div class="cap"><h1 id="h"></h1><p id="p"></p></div>
+<div class="phone"><div class="screen"><iframe id="f"></iframe></div></div>
+<script>
+const T = {
+  en: [["Your sourdough day, *at a glance*", "Your starter, the next step and a timer"],
+       ["Not sure? *Take a photo*", "Levain Pro checks your starter or crumb"],
+       ["Every step, *on time*", "Folds, proofing and baking, with alerts"],
+       ["*Exact* dough math", "Feeding, baker's percentage and pizza"],
+       ["Every starter, *always fed*", "Feedings, photos and status for each jar"]],
+  he: [["יום האפייה, *במבט אחד*", "המחמצת, השלב הבא וטיימר"],
+       ["לא בטוחים? *מצלמים*", "Levain Pro בודקת את המחמצת או את הלחם"],
+       ["כל שלב, *בזמן*", "קיפולים, התפחה ואפייה, עם התראות"],
+       ["חישובי בצק *מדויקים*", "האכלה, אחוזי אופה ובצק פיצה"],
+       ["כל מחמצת, *תמיד מוזנת*", "האכלות, תמונות ומצב לכל צנצנת"]],
+  fr: [["Votre fournée, *d'un coup d'œil*", "Votre levain, la prochaine étape et un minuteur"],
+       ["Un doute ? *Prenez une photo*", "Levain Pro analyse votre levain ou votre mie"],
+       ["Chaque étape, *à l'heure*", "Rabats, apprêt et cuisson, avec des alertes"],
+       ["Des calculs *précis*", "Rafraîchi, pourcentages du boulanger et pizza"],
+       ["Chaque levain, *bien nourri*", "Rafraîchis, photos et état de chaque bocal"]],
+  de: [["Dein Backtag *auf einen Blick*", "Sauerteig, nächster Schritt und Timer"],
+       ["Unsicher? *Mach ein Foto*", "Levain Pro prüft Sauerteig oder Krume"],
+       ["Jeder Schritt *pünktlich*", "Falten, Gare und Backen, mit Erinnerungen"],
+       ["Teig *exakt* berechnet", "Füttern, Bäckerprozente und Pizza"],
+       ["Jeder Sauerteig *gut gefüttert*", "Fütterungen, Fotos und Status pro Glas"]],
+  it: [["La tua giornata, *a colpo d'occhio*", "Lievito, prossima fase e timer"],
+       ["Hai un dubbio? *Scatta una foto*", "Levain Pro controlla lievito o mollica"],
+       ["Ogni fase, *al momento giusto*", "Pieghe, lievitazione e cottura, con avvisi"],
+       ["Calcoli *precisi*", "Rinfresco, percentuali del fornaio e pizza"],
+       ["Ogni lievito, *sempre nutrito*", "Rinfreschi, foto e stato di ogni barattolo"]],
+  ja: [["今日のパン作りを*ひと目で*", "スターター、次の工程、タイマー"],
+       ["迷ったら*写真で*", "Levain Proがスターターやクラムをチェック"],
+       ["どの工程も*時間どおり*", "パンチ、発酵、焼成を通知でお知らせ"],
+       ["生地の計算は*正確に*", "かけ継ぎ、ベーカーズ%、ピザ生地"],
+       ["スターターを*いつも元気に*", "かけ継ぎ・写真・状態を瓶ごとに"]],
+  ko: [["오늘의 베이킹을 *한눈에*", "르방, 다음 단계, 타이머"],
+       ["헷갈리면 *사진으로*", "Levain Pro가 르방과 빵 속을 확인해요"],
+       ["모든 단계를 *제때에*", "폴딩, 발효, 굽기까지 알림으로"],
+       ["*정확한* 반죽 계산", "먹이, 베이커스 퍼센트, 피자 반죽"],
+       ["르방은 *언제나 든든하게*", "병마다 먹이, 사진, 상태 관리"]],
+  pt: [["Sua fornada *num relance*", "Fermento, próxima etapa e timer"],
+       ["Na dúvida? *Tire uma foto*", "O Levain Pro analisa fermento ou miolo"],
+       ["Cada etapa *na hora certa*", "Dobras, fermentação e forno, com alertas"],
+       ["Contas de massa *exatas*", "Alimentação, porcentagem do padeiro e pizza"],
+       ["Cada fermento *sempre alimentado*", "Alimentações, fotos e status de cada pote"]],
+  es: [["Tu horneado *de un vistazo*", "Masa madre, siguiente paso y temporizador"],
+       ["¿Dudas? *Toma una foto*", "Levain Pro revisa tu masa madre o la miga"],
+       ["Cada paso *a tiempo*", "Pliegues, fermentación y horno, con avisos"],
+       ["Cálculos *exactos*", "Alimentación, porcentaje del panadero y pizza"],
+       ["Cada masa madre *bien alimentada*", "Alimentaciones, fotos y estado de cada frasco"]],
+};
+// Photo check answer shown in shot 2 (verdict "rising").
+const CHECK = {
+  en: ["Your starter is active and still rising. It isn't at its peak yet.", ["Lots of small bubbles on the side of the jar", "The top is flat, not domed yet"], ["Wait about 1–2 hours and check again", "Put a rubber band at today's level to see the rise"]],
+  he: ["המחמצת פעילה ועדיין תופחת. היא עוד לא בשיא.", ["הרבה בועות קטנות בדופן הצנצנת", "החלק העליון שטוח, עוד לא מקומר"], ["לחכות בערך שעה-שעתיים ולבדוק שוב", "לסמן בגומייה את הגובה כדי לראות את התפיחה"]],
+  fr: ["Votre levain est actif et monte encore. Il n'a pas atteint son pic.", ["Beaucoup de petites bulles contre la paroi", "Le dessus est plat, pas encore bombé"], ["Attendez 1 à 2 heures et vérifiez à nouveau", "Mettez un élastique au niveau actuel pour suivre la pousse"]],
+  de: ["Dein Sauerteig ist aktiv und steigt noch. Der Höhepunkt ist noch nicht erreicht.", ["Viele kleine Blasen am Glasrand", "Die Oberfläche ist flach, noch nicht gewölbt"], ["Etwa 1–2 Stunden warten und erneut prüfen", "Ein Gummiband auf die heutige Höhe setzen"]],
+  it: ["Il tuo lievito è attivo e sta ancora crescendo. Non è ancora al culmine.", ["Molte piccole bolle sul lato del barattolo", "La superficie è piatta, non ancora a cupola"], ["Aspetta circa 1–2 ore e controlla di nuovo", "Metti un elastico al livello attuale per vedere la crescita"]],
+  ja: ["スターターは元気で、まだ膨らんでいる途中です。ピークはこれからです。", ["瓶の側面に小さな泡がたくさん", "表面は平らで、まだ盛り上がっていない"], ["1〜2時間ほど待って、もう一度チェック", "今の高さに輪ゴムをつけて膨らみを確認"]],
+  ko: ["르방이 활발하고 아직 부풀고 있어요. 아직 최고점은 아니에요.", ["병 옆면에 작은 기포가 많아요", "윗면이 평평하고 아직 볼록하지 않아요"], ["1~2시간 정도 기다린 뒤 다시 확인하세요", "지금 높이에 고무줄을 감아 부푼 정도를 보세요"]],
+  pt: ["Seu fermento está ativo e ainda crescendo. Ainda não chegou ao pico.", ["Muitas bolhas pequenas na lateral do pote", "A superfície está plana, ainda não abaulada"], ["Espere cerca de 1–2 horas e confira de novo", "Coloque um elástico na altura de agora"]],
+  es: ["Tu masa madre está activa y sigue subiendo. Todavía no llega a su punto.", ["Muchas burbujas pequeñas en el costado del frasco", "La superficie está plana, todavía no abombada"], ["Espera 1 a 2 horas y revisa de nuevo", "Pon una liga al nivel de hoy para ver cuánto sube"]],
+};
+const NAMES = { en: ["Bubbles", "Rye Rosie"], he: ["בועות", "שיפון"], fr: ["Bulle", "Seigle"], de: ["Blubber", "Roggi"], it: ["Bolla", "Segale"],
+  ja: ["ぷくぷく", "ライ麦"], ko: ["뽀글이", "호밀이"], pt: ["Bolinha", "Centeio"], es: ["Burbujas", "Centeno"] };
+
+const q = new URLSearchParams(location.search);
+const size = q.get("size");
+if (size === "63") document.head.insertAdjacentHTML("beforeend", "<style>html{zoom:0.91364}</style>");
+if (size === "play") document.head.insertAdjacentHTML("beforeend", "<style>html,body{width:540px!important;height:960px!important}.cap{top:40px!important}.phone{top:192px!important}</style>");
+const shot = Math.max(1, Math.min(5, +(q.get("shot") || 1)));
+const lang = T[q.get("lang")] ? q.get("lang") : "en";
+const [h, p] = T[lang][shot - 1];
+document.documentElement.lang = lang;
+document.querySelector(".cap").dir = lang === "he" ? "rtl" : "ltr";
+document.getElementById("h").innerHTML = h.replace(/\*(.+?)\*/g, "<em>$1</em>");
+document.getElementById("p").textContent = p;
+
+// --- demo data. The page and the app share localStorage (same origin), so it is written before the app loads.
+const H = 3600000, now = Date.now(), iso = (msAgo) => new Date(now - msAgo).toISOString();
+const JAR = "data:image/svg+xml," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+<rect width="200" height="200" fill="#EFE4D6"/><ellipse cx="100" cy="178" rx="62" ry="10" fill="#D9C7B3"/>
+<rect x="52" y="34" width="96" height="20" rx="6" fill="#A06B4D"/>
+<path d="M50 56h100v104a18 18 0 0 1-18 18H68a18 18 0 0 1-18-18z" fill="#F8F4EE" stroke="#CFC3B4" stroke-width="3"/>
+<path d="M53 96c14-8 26 6 47-2s32 4 47-2v66a15 15 0 0 1-15 15H68a15 15 0 0 1-15-15z" fill="#EAD9BF"/>
+<g fill="#FBF6EC" stroke="#D8C3A3" stroke-width="1.5"><circle cx="72" cy="120" r="6"/><circle cx="96" cy="140" r="4"/><circle cx="124" cy="116" r="7"/><circle cx="84" cy="158" r="5"/><circle cx="130" cy="150" r="4"/><circle cx="110" cy="102" r="3.5"/></g>
+<path d="M62 62v40" stroke="#fff" stroke-width="6" stroke-linecap="round" opacity=".7"/></svg>`);
+const [n1, n2] = NAMES[lang];
+const seed = {
+  levain_language: lang,
+  levain_onboarded: "1",
+  levain_v2_seen: "1",
+  levain_settings: JSON.stringify({ theme: "light" }),
+  levain_starters: JSON.stringify([
+    { id: "s1", name: n1, creationDate: iso(800 * 24 * H), status: "active", lastFed: iso(3.2 * H), photo: JAR },
+    { id: "s2", name: n2, creationDate: iso(75 * 24 * H), status: "resting", lastFed: iso(30 * H) },
+  ]),
+  levain_active_starter: "s1",
+  levain_bake_state: shot === 1 || shot === 3 ? JSON.stringify({
+    active: true, startTime: iso(6 * H), scheduleType: "worker",
+    checked: ["feed-starter", "starter-ready", "autolyse", "fold-1", "fold-2"],
+    completedAt: { "feed-starter": iso(6 * H), "starter-ready": iso(2 * H), autolyse: iso(2 * H), "fold-1": iso(1.5 * H), "fold-2": iso(0.7 * H) },
+    autolyseStart: iso(2.8 * H), bulkStart: iso(2 * H), fold4Added: false,
+    foldStarts: { "fold-1": iso(1.5 * H), "fold-2": iso(0.7 * H) }, volumeStart: null, preShapeStart: null, coldStart: null, coldHours: 12,
+    bakePhase1Start: null, bakePhase2Start: null, bakePhase1Temp: 250, bakePhase1Min: 20, bakePhase2Temp: 220, bakePhase2Min: 20,
+  }) : "",
+};
+localStorage.clear();
+for (const k in seed) if (seed[k]) localStorage.setItem(k, seed[k]);
+
+const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+const tab = (d, i) => d.querySelectorAll(".tabbar button")[i].click();
+const SCENES = {
+  1: async () => {},
+  2: async (d, w) => {
+    const [summary, signs, next_steps] = CHECK[lang];
+    w.__shotsCheck = { starter: { is_subject: true, photo_quality: "good", verdict: "rising", confidence: 0.86, summary, signs, next_steps } };
+    d.querySelector(".pair .secondary").click();
+    await wait(400);
+    // A photo of the jar, picked through the real file input
+    const img = new Image(); img.src = JAR; await img.decode();
+    const c = document.createElement("canvas"); c.width = c.height = 600; c.getContext("2d").drawImage(img, 0, 0, 600, 600);
+    const blob = await new Promise((r) => c.toBlob(r, "image/png"));
+    const input = d.querySelector('input[type="file"]');
+    const dt = new w.DataTransfer(); dt.items.add(new w.File([blob], "jar.png", { type: "image/png" }));
+    input.files = dt.files; input.dispatchEvent(new w.Event("change", { bubbles: true }));
+    await wait(1800);
+    d.head.insertAdjacentHTML("beforeend", "<style>.check-photo{max-height:120px;object-fit:cover}</style>");
+    const v = d.querySelector(".verdict"); if (v) w.scrollTo(0, v.getBoundingClientRect().top + w.scrollY - 200);
+  },
+  3: async (d, w) => { tab(d, 2); await wait(500); const el = d.querySelector(".now, .step.current, .step.on"); if (el) w.scrollTo(0, el.getBoundingClientRect().top + w.scrollY - 120); },
+  4: async (d) => { tab(d, 3); await wait(400); d.querySelectorAll(".segmented")[0].querySelectorAll("button")[2].click(); },
+  5: async (d) => { tab(d, 1); },
+};
+
+const f = document.getElementById("f");
+f.addEventListener("load", async () => {
+  await wait(800);
+  await SCENES[shot](f.contentDocument, f.contentWindow);
+  await wait(500);
+  document.title = "ready";
+}, { once: true });
+f.src = `/?lang=${lang}`;
+</script>
+</body></html>

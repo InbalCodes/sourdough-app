@@ -1,5 +1,5 @@
 // Photo check: starter readiness or crumb, with what to do next. Free users get 3 checks, then Pro.
-import { useState } from "preact/hooks";
+import { useEffect, useState } from "preact/hooks";
 import { CheckError, photoToBase64, runCheck, type CheckKind, type CheckResponse, type Verdict } from "../lib/check";
 import { lang, t, type Key } from "../i18n";
 import { Card } from "../ui";
@@ -13,6 +13,32 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
   const [busy, setBusy] = useState(false);
   const [res, setRes] = useState<CheckResponse | null>(null);
   const [err, setErr] = useState("");
+  const [waitingPro, setWaitingPro] = useState(false); // the photo hit the free limit; check it once Pro is on
+
+  const check = async (b64: string, retries = 0) => {
+    setBusy(true);
+    setErr("");
+    try {
+      setRes(await runCheck(kind, b64, lang));
+      setWaitingPro(false);
+    } catch (x) {
+      const code = x instanceof CheckError ? x.code : "";
+      // Right after buying, the server may need a moment to see the purchase.
+      if (code === "FREE_USED" && retries > 0) {
+        await new Promise((r) => setTimeout(r, 2500));
+        return check(b64, retries - 1);
+      }
+      if (code === "FREE_USED") { setWaitingPro(true); props.onNeedPro(); }
+      setErr(t(code === "BUSY" ? "checkErrBusy" : code === "MONTH_LIMIT" ? "checkMonthLimit" : code === "FREE_USED" ? "freeChecksIntro" : "checkErrGeneric"));
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  // Bought Pro from the paywall this photo opened: check the same photo right away.
+  useEffect(() => {
+    if (props.pro && waitingPro && photo) { setWaitingPro(false); check(photo, 3); }
+  }, [props.pro]);
 
   const pick = async (e: Event) => {
     const input = e.target as HTMLInputElement;
@@ -23,20 +49,13 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
     setRes(null);
     const b64 = await photoToBase64(file);
     setPhoto(b64);
-    setBusy(true);
-    try {
-      setRes(await runCheck(kind, b64, lang));
-    } catch (x) {
-      const code = x instanceof CheckError ? x.code : "";
-      if (code === "FREE_USED") props.onNeedPro();
-      setErr(t(code === "BUSY" ? "checkErrBusy" : code === "MONTH_LIMIT" ? "checkMonthLimit" : code === "FREE_USED" ? "freeChecksIntro" : "checkErrGeneric"));
-    } finally {
-      setBusy(false);
-    }
+    await check(b64, props.pro ? 2 : 0);
   };
 
   const r = res?.result;
-  const tone = r ? (GOOD.includes(r.verdict) ? "good" : BAD.includes(r.verdict) ? "bad" : "mid") : "";
+  // When the photo isn't a starter/loaf, ignore the model's verdict and show "hard to tell".
+  const verdict: Verdict | undefined = r && (r.is_subject ? r.verdict : "unclear");
+  const tone = verdict ? (GOOD.includes(verdict) ? "good" : BAD.includes(verdict) ? "bad" : "mid") : "";
 
   return (
     <div class="screen">
@@ -47,7 +66,7 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
 
       <div class="segmented">
         {(["starter", "crumb"] as CheckKind[]).map((k) => (
-          <button class={k === kind ? "on" : ""} onClick={() => { props.setKind(k); setRes(null); setPhoto(null); setErr(""); }}>
+          <button class={k === kind ? "on" : ""} onClick={() => { props.setKind(k); setRes(null); setWaitingPro(false); setPhoto(null); setErr(""); }}>
             {t(k === "starter" ? "checkTabStarter" : "checkTabCrumb")}
           </button>
         ))}
@@ -67,7 +86,7 @@ export function Check(props: { kind: CheckKind; setKind: (k: CheckKind) => void;
       {r && (
         <Card class={"verdict " + tone}>
           <div class="verdict-head">
-            <h2>{t(("v_" + r.verdict) as Key)}</h2>
+            <h2>{t(("v_" + verdict) as Key)}</h2>
             {r.is_subject && <span class="pill">{t("confidence", { p: Math.round(r.confidence * 100) })}</span>}
           </div>
           <p>{r.summary}</p>

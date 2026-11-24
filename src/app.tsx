@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from "preact/hooks";
 import { dueAlerts } from "./lib/bake";
 import { playChime } from "./lib/chime";
+import { Intro } from "./components/Intro";
 import { Paywall } from "./components/Paywall";
 import type { CheckKind } from "./lib/check";
 import { scheduleBake } from "./lib/notify";
@@ -10,6 +11,7 @@ import { Check } from "./screens/Check";
 import { importV1Recipes, loadRecipes } from "./lib/recipes";
 import { t, type Key } from "./i18n";
 import { useAppState } from "./state";
+import { SK, loadRaw } from "./lib/store";
 import { useNow } from "./ui";
 import { Bake } from "./screens/Bake";
 import { Calculators, type BakersDraft, type CalcTab } from "./screens/Calculators";
@@ -41,6 +43,12 @@ export function App() {
   const [pro, setPro] = useState(false);
   const [paywall, setPaywall] = useState(false);
   const [checkKind, setCheckKind] = useState<CheckKind | null>(null);
+  // Intro on first launch only (?intro shows it again, for testing).
+  const [intro, setIntro] = useState(() => !loadRaw(SK.onboarded) || location.search.includes("intro"));
+  const endIntro = () => {
+    try { localStorage.setItem(SK.onboarded, "1"); } catch { /* ignore */ }
+    setIntro(false);
+  };
   useEffect(() => {
     void isPro().then(setPro);
     void onProChange(setPro);
@@ -134,6 +142,7 @@ export function App() {
           onUnlocked={() => { setPro(true); setPaywall(false); showToast(t("proActive")); }}
         />
       )}
+      {intro && <Intro onDone={endIntro} />}
       {toast && <div class="toast" role="status">{toast}</div>}
     </div>
   );

@@ -257,6 +257,20 @@ const ja: Record<Key, string> = {
   startPlan: "このプランで始める",
   planTooSoon: "このスケジュールでは時間が足りません。もっと遅い時間を選んでください。",
   planWaiting: "{t}に開始：かけ継ぎの時間をLevainがお知らせします。",
+  // Intro (first launch)
+  obSkip: "スキップ",
+  obNext: "次へ",
+  obStart: "はじめる",
+  ob1Title: "スターターをしっかり管理",
+  ob1Text: "かけ継ぎを記録すると、使いどきと次のお世話のタイミングをLevainが教えてくれます。",
+  ob2Title: "生地を計算",
+  ob2Text: "粉の量を入れるだけで、どんな加水率でも水・塩・スターターの量がわかります。ピザにも。",
+  ob3Title: "タイミングをお知らせ",
+  ob3Text: "パンチ、成形、焼成をひとつのタイムラインで。アプリを閉じていても通知します。",
+  ob4Title: "レシピをスマホに",
+  ob4Text: "うまく焼けたパンを保存して、ワンタップでもう一度。アカウントは不要です。",
+  ob5Title: "迷ったら写真で",
+  ob5Text: "Levain Proがスターターやクラムを見て、次にすることを教えます。3回まで無料。",
 };
 
 export default ja;
